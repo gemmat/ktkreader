@@ -1,0 +1,585 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"></meta>
+    <title>ktkreader</title>
+    <script src="./lib/prototype.js" type="text/javascript"></script>
+    <script src="./lib/scriptaculous.js?load=builder" type="text/javascript"></script>
+    <script src="./ktkr.js" type="text/javascript"></script>
+    <link type="text/css" rel="stylesheet" href="./ktkr.css"></link>
+  </head>
+  <body>
+    <div id="main">
+      <div id="nav">
+	<table cellspacing="0" cellpadding="0" border="0" id="selectors-box" class="round-box nav-roster-collapsed">
+	  <tbody>
+	    <tr>
+	      <td class="c">
+		<div id="selectors-box">
+		  <ul id="selectors-container">
+		    <li class="selector selected" id="overview-selector"><a class="link" href="./ktkr.html">
+			<span class="text">ホーム</span></a></li>
+		    <li class="selector unread" id="reading-list-selector"><a class="link" href="">
+			<span class="text">未定 <span id="reading-list-unread-count"></span></span></a></li>
+		    <li class="selector" id="star-selector"><a class="link" href="">
+			<span class="text">未定</span></a></li>
+		    <li class="selector" id="trends-selector">
+		      <a class="link" href="">
+			<span class="text">未定</span></a></li>
+		    <li class="selector" id="broadcast-selector">
+		      <a class="link" href="">
+			<span class="text">未定</span></a></li>
+		  </ul>
+		</div>
+	      </td>
+	    </tr>
+	  </tbody>
+	</table>
+	<table cellspacing="0" cellpadding="0" border="0" id="add-box" class="round-box">
+	  <tbody>
+	    <tr>
+	      <td class="c">
+		<div id="add-box">
+		  <div id="add-directory">
+		    <a class="link" href="">未定 »</a></div>
+		  <span id="add-subs" class="link">未定</span>
+		</div>
+	      </td>
+	    </tr>
+	  </tbody>
+	</table>
+	<table cellspacing="0" cellpadding="0" border="0" id="sub-tree-box" class="round-box">
+	  <tbody>
+	    <tr>
+	      <td class="c">
+		<div id="sub-tree-box">
+		  <div class="scroll-tree-container" id="sub-tree-container">
+		    <div class="sub-tree-header" id="all-subscriptions-header">表示:
+		      <span id="sub-tree-show-new" class="link">未定</span> -
+		      <strong>未定</strong></div>
+		    <div class="sub-tree-header" id="new-subscriptions-header">表示:
+		      <strong>未定</strong> - <span id="sub-tree-show-all" class="link">all</span></div>
+		    <ul class="scroll-tree" id="sub-tree">
+		      <li class="sub unselectable expanded unread">
+			<span class="name name-d-1">
+			  <span class="name-text name-text-d-1">実況ch</span>
+			</span>
+			<ul>
+			  <li>
+			    <a href="./ktkr.html?board=http://headline.2ch.net/bbylive/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">実況headline</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://epg.2ch.net/tv2chwiki/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">テレビ番組欄</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/livesaturn/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">なんでも実況S</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/livevenus/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">なんでも実況V</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live23.2ch.net/livejupiter/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">なんでも実況J</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live27.2ch.net/liveuranus/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">なんでも実況U</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/endless/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">実況ch</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/weekly/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">番組ch</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/livewkwest/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">番組ch(西日本)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live23.2ch.net/livenhk/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">番組ch(NHK)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live23.2ch.net/liveetv/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">番組ch(教育)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live23.2ch.net/liventv/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">番組ch(NTV)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live23.2ch.net/livetbs/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">番組ch(TBS)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live23.2ch.net/livecx/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">番組ch(フジ)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live23.2ch.net/liveanb/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">番組ch(朝日)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live23.2ch.net/livetx/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">番組ch(TX)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/livebs/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">BS実況(NHK)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/livewowow/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">BS実況(民放)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/liveskyp/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">スカパー実況</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/liveradio/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">ラジオ実況</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/dome/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">スポーツch</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/livebase/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">野球ch</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/livefoot/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">サッカーch</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/oonna/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">五輪実況(女)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/ootoko/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">五輪実況(男)</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/dancesite/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">芸能ch</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live24.2ch.net/festival/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">お祭りch</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://news24.2ch.net/liveplus/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">ニュース実況+</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://mamono.2ch.net/livemarket1/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">市況1</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://live27.2ch.net/livemarket2/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">市況2</span>
+			      </span>
+			    </a>
+			  </li>
+			</ul>
+		      </li>
+		      <li class="sub unselectable expanded unread">
+			<span class="name name-d-1">
+			  <span class="name-text name-text-d-1">受験・学校</span>
+			</span>
+			<ul>
+			  <li>
+			    <a href="./ktkr.html?board=http://school7.2ch.net/edu/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">教育・先生</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://school7.2ch.net/jsaloon/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">大学受験サロン</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://namidame.2ch.net/kouri/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">大学受験</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://school7.2ch.net/juku/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">学習塾・予備校</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://school7.2ch.net/ojyuken/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">お受験</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://school7.2ch.net/senmon/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">専門学校</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://school7.2ch.net/design/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">美術系学校</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://school7.2ch.net/musicology/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">音楽系学校</span>
+			      </span>
+			    </a>
+			  </li>
+			  <li>
+			    <a href="./ktkr.html?board=http://school7.2ch.net/govexam/" class="link">
+			      <span class="name name-d-2">
+				<span class="name-text name-text-d-2">公務員試験</span>
+			      </span>
+			    </a>
+			  </li>
+			</ul>
+		      </li>
+		    </ul>
+		  </div>
+		  <div id="sub-tree-footer"><a id="sub-tree-subscriptions" href="">未定 »</a></div>
+		</div>
+	      </td>
+	    </tr>
+	  </tbody>
+	</table>
+      </div>
+      <div id="nav-toggler" style="height: 625px;"></div>
+      <div id="chrome">
+	<div id="viewer-header">
+	  <div id="viewer-controls">
+	    <div id="viewer-controls-container-main">
+	      <div id="viewer-controls-container">
+		<table class="button-container unselectable button-container-menu scour-disabled"
+		       id="stream-prefs-menu">
+		  <tbody>
+		    <tr>
+		      <td class="btl"></td>
+		      <td class="btr"></td>
+		    </tr>
+		    <tr>
+		      <td class="bbl"></td>
+		      <td class="bbr">
+			<div class="button-body-container">
+			  <div class="button-menu-arrow"></div>
+			  <span class="button-body unselectable">設定...</span></div>
+		      </td>
+		    </tr>
+		  </tbody>
+		</table>
+		<table cellspacing="0" cellpadding="0" border="0" id="view-cards"
+		       class="round-box unselectable tab-header">
+		  <tbody>
+		    <tr>
+		      <td class="s tl"></td>
+		      <td class="s"></td>
+		      <td class="s tr"></td>
+		    </tr>
+		    <tr>
+		      <td class="s"></td>
+		      <td class="c">未定</td>
+		      <td class="s"></td>
+		    </tr>
+		    <tr>
+		      <td class="s bl sq"></td>
+		      <td class="s"></td>
+		      <td class="s br sq"></td>
+		    </tr>
+		  </tbody>
+		</table>
+		<table cellspacing="0" cellpadding="0" border="0" id="view-list"
+		       class="round-box unselectable tab-header">
+		  <tbody>
+		    <tr>
+		      <td class="s tl"></td>
+		      <td class="s"></td>
+		      <td class="s tr"></td>
+		    </tr>
+		    <tr>
+		      <td class="s"></td>
+		      <td class="c">未定</td>
+		      <td class="s"></td>
+		    </tr>
+		    <tr>
+		      <td class="s bl sq"></td>
+		      <td class="s"></td>
+		      <td class="s br sq"></td>
+		    </tr>
+		  </tbody>
+		</table>
+	      </div>
+	      <ul class="single-feed-menu hidden" id="stream-prefs-menu-contents" style="top: 23px; max-height: 532px;">
+		<li class="reading-list-menu-item folder-menu-item single-feed-menu-item friend-stream-menu-item menu-item"
+		    id="order-by-newest">
+		  <span class="menu-item-label">レスの多い順</span></li>
+		<li class="reading-list-menu-item folder-menu-item single-feed-menu-item friend-stream-menu-item menu-item"
+		    id="order-by-oldest">
+		  <span class="menu-item-label">レスの少ない順</span></li>
+		<li class="reading-list-menu-item folder-menu-item menu-item"
+		    id="order-by-magic">
+		  <span class="menu-item-label">未定</span></li>
+		<li class="reading-list-menu-item divider menu-item"
+		    id="set-as-start">
+		  <span class="menu-item-label">未定</span></li>
+		<li class="single-feed-menu-item divider menu-item"
+		    id="stream-unsubscribe">
+		  <span class="menu-item-label">未定</span></li>
+		<li class="single-feed-menu-item menu-item" id="stream-rename">
+		  <span class="menu-item-label">未定...</span></li>
+		<li class="single-feed-menu-item friend-stream-menu-item divider menu-item"
+		    id="stream-folder-chooser"></li>
+	      </ul>
+	    </div>
+	  </div>
+	  <div class="title" id="chrome-stream-title">
+	    <a target="_blank" href="">&nbsp;</a>
+	    <a target="_blank" href="">&nbsp;</a>
+	  </div>
+	</div>
+	<table id="viewer-box-table">
+	  <tbody>
+	    <tr>
+	      <td class="" id="viewer-box">
+		<div id="viewer-box-inner">
+		  <div id="viewer-top-links" class="show-all">
+		    <span id="viewer-all-new-links-parent">
+		      <span class="viewer-links" id="viewer-new-links">表示: - <span id="show-all" class="link">すべてのアイテム</span></span>
+		      <span class="viewer-links" id="viewer-all-links">表示: <span id="show-new" class="link"></span> -
+			<strong>すべてのアイテム</strong></span></span>
+		    <table class="button-container unselectable button-container-tight viewer-buttons"
+			   id="viewer-refresh">
+		      <tbody>
+			<tr>
+			  <td class="btl"></td>
+			  <td class="btr"></td>
+			</tr>
+			<tr>
+			  <td class="bbl"></td>
+			  <td class="bbr">
+			    <div class="button-body-container"><span class="button-body unselectable">更新</span></div>
+			  </td>
+			</tr>
+		      </tbody>
+		    </table>
+		    <div class="clr"></div>
+		  </div>
+		  <div id="entries" class="single-source list" style="visibility: visible"></div>
+		</div>
+	      </td>
+	    </tr>
+	  </tbody>
+	</table>
+	<div id="viewer-page-container1">
+	  <div id="viewer-header1">
+	    <div id="viewer-controls1">
+	      <div id="viewer-controls-container-main1">
+		<div id="viewer-controls-container1">
+		  <table cellspacing="0" cellpadding="0" border="0" id="view-cards1"
+			 class="round-box unselectable tab-header tab-header-selected">
+		    <tbody>
+		      <tr>
+			<td class="s tl"></td>
+			<td class="s"></td>
+			<td class="s tr"></td>
+		      </tr>
+		      <tr>
+			<td class="s"></td>
+			<td class="c">通常表示</td>
+			<td class="s"></td>
+		      </tr>
+		      <tr>
+			<td class="s bl sq"></td>
+			<td class="s"></td>
+			<td class="s br sq"></td>
+		      </tr>
+		    </tbody>
+		  </table>
+		  <table cellspacing="0" cellpadding="0" border="0" id="view-list1"
+			 class="round-box unselectable tab-header">
+		    <tbody>
+		      <tr>
+			<td class="s tl"></td>
+			<td class="s"></td>
+			<td class="s tr"></td>
+		      </tr>
+		      <tr>
+			<td class="s"></td>
+			<td class="c">ツリー表示</td>
+			<td class="s"></td>
+		      </tr>
+		      <tr>
+			<td class="s bl sq"></td>
+			<td class="s"></td>
+			<td class="s br sq"></td>
+		      </tr>
+		    </tbody>
+		  </table>
+		</div>
+	      </div>
+	    </div>
+	  </div>
+	  <div id="left-section" class="section"></div>
+	</div>
+	<div id="chrome-footer-container">
+	  <table class="button-container unselectable button-container-tight"
+		 id="thread-reload">
+	    <tbody>
+	      <tr>
+		<td class="btl"></td>
+		<td class="btr"></td>
+	      </tr>
+	      <tr>
+		<td class="bbl"></td>
+		<td class="bbr">
+		  <div class="button-body-container"><span class="button-body unselectable">更新</span></div>
+		</td>
+	      </tr>
+	    </tbody>
+	  </table>
+	  <table class="button-container unselectable button-container-tight"
+		 id="entries-up">
+	    <tbody>
+	      <tr>
+		<td class="btl"></td>
+		<td class="btr"></td>
+	      </tr>
+	      <tr>
+		<td class="bbl"></td>
+		<td class="bbr">
+		  <div class="button-body-container"><span class="button-body unselectable">未定</span></div>
+		</td>
+	      </tr>
+	    </tbody>
+	  </table>
+	  <table class="button-container unselectable button-container-tight"
+		 id="entries-down">
+	    <tbody>
+	      <tr>
+		<td class="btl"></td>
+		<td class="btr"></td>
+	      </tr>
+	      <tr>
+		<td class="bbl"></td>
+		<td class="bbr">
+		  <div class="button-body-container"><span class="button-body unselectable">未定</span></div>
+		</td>
+	      </tr>
+	    </tbody>
+	  </table>
+	  <div id="entries-status"></div>
+	</div>
+      </div>
+    </div>
+  </body>
+</html>
