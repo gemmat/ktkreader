@@ -42,14 +42,13 @@
 			       (lambda (out)
 				 (receive (status header body)
 				     (http-get server (format #f "/~a/dat/~a.dat" board thread)
-					       :user-agent "My Scheme Program/1.0"
+					       :user-agent "Monazilla/1.00"
 					       :if-modified-since (read-last-modified file-h)
 					       :range (format #f "bytes=~a-" orig-bytes)
 					       :sink out
 					       :flusher (lambda _ #t))
 				   (call-with-output-file file-h (cut write header <>))
-				   ;;debug
-				   (format (current-error-port) "~a ~a\n" status header)
+				   ;;debug (format (current-error-port) "~a ~a\n" status header)
 				   status))))
 	   (begin
 	     (process-output->string (format #f "cat ~a ~a > ~a && gzip -c ~a > ~a" orig diff sum sum orig-gz))
@@ -67,13 +66,13 @@
 			      (lambda (out)
 				(receive (status header body)
 				    (http-get server (format #f "/~a/dat/~a.dat" board thread)
-					      :user-agent "My Scheme Program/1.0"
+					      :user-agent "Monazilla/1.00"
 					      :accept-encoding "gzip"
 					      :if-modified-since (read-last-modified file-h)
 					      :sink out
 					      :flusher (lambda _ #t))
 				  (call-with-output-file file-h (cut write header <>))
-				  (format (current-error-port) "~a ~a\n" status header)
+				  ;;debug (format (current-error-port) "~a ~a\n" status header)
 				  status))))
 	(move-file tmp file :if-exists :supersede))
       (process-output->string-list `(gzip -cd ,file) :encoding 'SHIFT_JIS))))
@@ -89,21 +88,20 @@
 			      (lambda (out)
 				(receive (status header body)
 				    (http-get server (format #f "/~a/subject.txt" board)
-					      :user-agent "My Scheme Program/1.0"
+					      :user-agent "Monazilla/1.00"
 					      :accept-encoding "gzip"
 					      :if-modified-since (read-last-modified file-h)
 					      :sink out
 					      :flusher (lambda _ #t))
 				  (call-with-output-file file-h (cut write header <>))
-				  (format (current-error-port) "~a ~a\n" status header)
+				  ;;debug (format (current-error-port) "~a ~a\n" status header)
 				  status))))
 	(move-file tmp file :if-exists :supersede))
       (process-output->string-list `(gzip -cd ,file) :encoding 'SHIFT_JIS))))
 
 (define (board-params-parse board)
-  (and board (receive (scheme userinfo host port path query fragment) (uri-parse board)
-	       (and-let* ((path (find (lambda (x)
-					(not (zero? (string-length x))))
+  (and board (receive (scheme userinfo host port path query fragment) (uri-parse (uri-decode-string board))
+	       (and-let* ((path (find (lambda (x) (not (zero? (string-length x))))
 				      (string-split path #\/))))
 		 (list host path)))))
 

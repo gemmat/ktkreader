@@ -1,5 +1,6 @@
+//TODO 'ul#sub-tree a.link' たちに持たせているhrefプロパティのboardクエリパラメータはuri-encodeするべき
 var CGI_URL = '../cgi-bin/ktkreader/ktkr.cgi';
-
+var HTML_URL = './ktkr.html';
 var current_data = [];
 var current_subject = [];
 
@@ -41,8 +42,8 @@ function parse_dat_and_display(o,h) {
   var partitions = 100;
   //スレのdatをpartitions行ごとに分割して処理をする。
   var datl = o.responseText.split('\n').eachSlice(partitions);
-  datl.each(function(x,i) {
-    scheduler.push_queue(function() {
+  scheduler.concat_queues(datl.map(function(x,i) {
+    return function() {
       $('entries-status').update('スレ描画中...');
       var l = x.map(function(line,j) {
 	// DATファイルの仕様として、1行めに"スレタイ"が入っていることに注意せよ
@@ -51,21 +52,23 @@ function parse_dat_and_display(o,h) {
 	// 名無し<>sage<>2008/12/25 12:01:00 ID foobarrr<>1乙<>
 	// </b>名無し<b><>sage<>2008/12/25 12:01:30 ID hogehoge<>1GJ!<>
 	var a = line.split('<>');
-	if (a.length < 5) return null;
+	if (a.length < 5) return [DT(),DD().update(line)];
+	if (a[4]) $('chrome-stream-title').down(1).update(a[4]);
+	var count = head+(i*partitions)+j;
 	var name = a[0].replace(/<\/b>([^<]*)<b>/g,"<b>$1</b>");
 	var mail = a[1];
 	var date = a[2];
 	var body = a[3].replace(
-	    /<a[^>]*>&gt\;&gt\;(\d{1,4})<\/a>/g,'<a class="thread-ref" href="$1">&gt\;&gt\;$1</a>').replace(
-	    /<a[^>]*>&gt\;&gt\;(\d{1,4})-(\d{1,4})<\/a>/g,'<a class="thread-ref" href="$2">&gt\;&gt\;$1-$2</a>');
-	return [DT().update(head+(i*partitions)+j+" :"+name+":"+mail+":"+date), DD().update(body)]}).compact();
+	    /<a[^>]*>&gt\;&gt\;(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>').replace(
+	    /<a[^>]*>&gt\;&gt\;(\d{1,4})-(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1-$2" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1-$2</a>');
+	      return [DT().update(count + " :"+name+":"+mail+":"+date), DD().update(body)]}).compact();
+      current_data = current_data.concat(l);
       l.each(function(x) {
 	var dl = $('left-section').down();
 	dl.appendChild(x[0]);
 	dl.appendChild(x[1]);
       });
-      current_data = current_data.concat(l);
-    })});
+    }}));
   //完了のタスク。ツリー表示は描画をやりなおすことになっている。
   //逐次的にツリーを描画する方法はあるだろうけどまだわからん。
   scheduler.push_queue(function() {
@@ -89,8 +92,9 @@ function show_tree() {
   // アンカの関係から"隣接リスト"を作る。
   var arr = current_data.map(function(x,i) {
 			       var hrefs = x[1].select('a.thread-ref').map(function(x) {
-									     if (x.href && /(\d+)$/.test(x.href)) {
-									       var p = parseInt(x.href.match(/(\d+)$/)[1]);
+									     var re = /(\d+)$/;
+									     if (x.href && x.href.search(re) != -1) {
+									       var p = parseInt(x.href.match(re)[1]);
 									       return isNaN(p) ? null : p-1;
 									     };
 									     return null;
@@ -103,7 +107,7 @@ function show_tree() {
   //それを木に統合する。
   var tree = tree_merge(inversed_arr);
   //DL、DT、DDタグのツリーにして表示する。
-  var e = clear_leftsection();
+  var e = clear_dom('left-section');
   tree.each(function(x) {e.appendChild(dl_tree(x))});
 }
 
@@ -112,18 +116,17 @@ function show_tree() {
 //スレ一括更新
 function view_thread(elm) {
   var title = $('chrome-stream-title').down(1);
-  title.innerHTML = '&gt;&gt; ' + elm.innerHTML;
   title.href = elm.href;
   title.onclick = function() {return view_thread_diff(elm)};
   $('thread-reload').onclick = function() {return view_thread_diff(elm)};
   var re = /board=(.*)&thread=(.*)/;
-  if (re.test(elm.href)) {
+  if (elm.href.search(re) != -1) {
     var info = elm.href.match(re);
     new Ajax.Request(CGI_URL,{
       parameters: {board:info[1],thread:info[2]},
       onComplete: function(o,h) {
 	current_data = [];
-	clear_leftsection().appendChild(DL());
+	clear_dom('left-section').appendChild(DL());
 	parse_dat_and_display(o,h);
       }
     });
@@ -134,7 +137,8 @@ function view_thread(elm) {
 
 //スレ差分更新
 function view_thread_diff(elm) {
-  if (/board=(.*)&thread=(.*)/.test(elm.href)) {
+  var re = /board=(.*)&thread=(.*)/;
+  if (elm.href.search(re) != -1) {
     var info = elm.href.match(/board=(.*)&thread=(.*)/);
     new Ajax.Request(CGI_URL,{
       parameters: {board:info[1],thread:info[2],head:current_data.length},
@@ -154,7 +158,7 @@ function view_board(elm) {
   $('viewer-refresh').onclick = function() {return view_board(elm)};
   $('chrome-stream-title').down(1).innerHTML = '';
   var re = /board=(.*)/;
-  if (re.test(elm.href)) {
+  if (elm.href.search(re) != -1) {
     var board = elm.href.match(re)[1];
     new Ajax.Request(CGI_URL,{
       parameters: {board:board},
@@ -168,8 +172,7 @@ function view_board(elm) {
 }
 
 function subjects(board,responseText) {
-  var entries = $('entries');
-  while(entries.firstChild) entries.removeChild(entries.firstChild);
+  var entries = clear_dom('entries');
   //板のsubject.txtを100行ごとに分割して処理をする。
   var subj = responseText.split('\n').eachSlice(100);
   scheduler.concat_queues(subj.map(function(lines){
@@ -177,13 +180,13 @@ function subjects(board,responseText) {
       $('entries-status').update('板描画中...');
       lines.each(function(x) {
 	var re = /(\d+).dat<>(.*)\((\d+)\)$/;
-	if (re.test(x)) {
+	if (x.search(re) != -1) {
 	  var y = x.match(re);
 	  var thread_key = y[1];
 	  var thread_title = y[2];
 	  var thread_rescount = y[3];
 	  var re_board = /(http:\/\/[^/]+)\/(.*)/;
-	  var board_host_and_path = re_board.test(board) ? board.match(re_board) : ['null','null','null'];
+	  var board_host_and_path = board.search(re_board) != -1 ? board.match(re_board) : ['null','null','null'];
 	  var elt = DIV({className:'entry'},
 		      DIV({className:'collapsed'},
 		      [DIV({className: 'entry-icons'},
@@ -195,7 +198,7 @@ function subjects(board,responseText) {
 			   className:"entry-original"}),
 			DIV({className:'entry-secondary'},
 			A({className:'entry-title',
-			   href:"./ktkr.html?board="+board+"&thread="+thread_key,
+			   href:HTML_URL+"?board="+board+"&thread="+thread_key,
 			   onclick:"return view_thread(this);"},
 			   thread_title))])]));
 	  current_subject.push(elt);
@@ -208,25 +211,22 @@ function subjects(board,responseText) {
 function show_sorted_subjects(compfun) {
   var copy = current_subject.concat();
   copy.sort(compfun);
-  var entries = $('entries');
-  while(entries.firstChild) entries.removeChild(entries.firstChild);
+  var entries = clear_dom('entries');
   copy.each(function(x) {entries.appendChild(x)});
 }
 
 function asc_rescount(a,b){
-  var re = /(\d+)/;
-  var parsed_i = null;
-  var a_value = null, b_value = null;
-  var str = a.select('.entry-date')[0].innerHTML;
-  if (re.test(str)) {
-    parsed_i = parseInt(str.match(re)[0]);
-    if (!isNaN(parsed_i)) a_value = parsed_i;
+  function f(x) {
+    var re = /(\d+)/;
+    var str = x.select('.entry-date')[0].innerHTML;
+    if (str.search(re) != -1) {
+      var parsed_i = parseInt(str.match(re)[0]);
+      if (!isNaN(parsed_i)) return parsed_i;
+    };
+    return null;
   };
-  str = b.select('.entry-date')[0].innerHTML;
-  if (re.test(str)) {
-    parsed_i = parseInt(str.match(re)[0]);
-    if (!isNaN(parsed_i)) b_value = parsed_i;
-  };
+  var a_value = f(a);
+  var b_value = f(b);
   if (a_value && b_value) {
     if (a_value > b_value) return -1;
     if (a_value < b_value) return 1;
@@ -289,34 +289,84 @@ function toggle_nav() {
   } else {
     $('chrome').setStyle({marginLeft: ''});
   }
+  onresize();
 }
 
-function clear_leftsection() {
-  var e = $('left-section');
+function toggle_entries() {
+  document.body.toggleClassName('hide-entries');
+  onresize();
+}
+
+function toggle_folder(elt) {
+  elt.toggleClassName('collapsed');
+  elt.toggleClassName('expanded');
+  if (elt.hasClassName('expanded')) {
+    elt.down(1).src='tree-view-folder-open.gif';
+  } else {
+    elt.down(1).src='tree-view-folder-closed.gif';
+  };
+}
+function clear_dom(elt) {
+  var e = $(elt);
   while(e.firstChild) e.removeChild(e.firstChild);
   return e;
 }
 
+function anchor_onclick(elt) {
+  var re = /(\d+)$/;
+  var href = null;
+  if (elt.href && elt.href.search(re) != -1) {
+    var p = parseInt(elt.href.match(re)[1]);
+    if (!isNaN(p)) href = p-1;
+  };
+  if (href != null && current_data[href]) {
+    //これでいいのか? 16pxは根拠なし。
+    $('left-section').scrollTop = current_data[href][0].offsetTop - $('left-section').offsetTop - 16;
+  };
+  return false;
+}
+function anchor_onhover(elt) {
+  var re = /(\d+)$/;
+  var href = null;
+  if (elt.href && elt.href.search(re) != -1) {
+    var p = parseInt(elt.href.match(re)[1]);
+    if (!isNaN(p)) href = p-1;
+  };
+  var e;
+  if (href != null && current_data[href]) {
+    e = clear_dom('quick-add-instructions');
+    e.appendChild(DL([DT().update(current_data[href][0].innerHTML),
+		      DD().update(current_data[href][1].innerHTML)]));
+  };
+  e = $('quick-add-bubble-holder');
+  var pos = elt.viewportOffset();
+  //150pxにはなんの根拠もない。
+  pos.left+=150;
+  pos.top-=150;
+  e.setStyle(pos);
+  if (e.hasClassName('hidden')) e.removeClassName('hidden');
+}
+
 function calcSize() {
-  var myWidth = 0, myHeight = 0;
+  var Width = 0, Height = 0;
   if( typeof( window.innerWidth ) == 'number' ) {
     //Non-IE
-    myHeight = window.innerHeight;
-    myWidth = window.innerWidth;
+    Height = window.innerHeight;
+    Width = window.innerWidth;
   } else if(document.documentElement &&
 	    (document.documentElement.clientHeight ||
 	     document.documentElement.clientWidth)) {
     //IE 6+ in 'standards compliant mode'
-    myHeight = document.documentElement.clientHeight;
-    myWidth = document.documentElement.clientWidth;
+    Height = document.documentElement.clientHeight;
+    Width = document.documentElement.clientWidth;
   } else if(document.body &&
 	    (document.body.clientHeight ||
 	     document.body.clientWidth)) {
     //IE 4 compatible
-    myHeight = document.body.clientHeight;
-    myWidth = document.body.clientWidth;
+    Height = document.body.clientHeight;
+    Width = document.body.clientWidth;
   }
-  return [myHeight,myWidth];
+  return [Height,Width];
 }
 
 function onresize() {
@@ -324,9 +374,13 @@ function onresize() {
   var b = $('sub-tree');
   var c = $('nav-toggler');
   var w = calcSize();
-  var e1 = $('chrome-footer-container'),e2 = $('viewer-box-table');
+  var e1 = $('chrome-footer-container'),e2 = $('viewer-box-table'), e3 = $('viewer-header');
   var f1 = $('selectors-box'),f2 = $('add-box');
-  a.style.height = w[0]-e1.offsetHeight-e2.offsetHeight-40;
+  if (document.body.hasClassName('hide-entries')) {
+    a.style.height = w[0]-e1.offsetHeight-e3.offsetHeight-30;
+  } else {
+    a.style.height = w[0]-e1.offsetHeight-e2.offsetHeight-50;
+  };
   b.style.height = w[0]-f1.offsetHeight-f2.offsetHeight-50;
   c.style.height = w[0];
 }
@@ -336,25 +390,20 @@ function main() {
   Builder.dump();
   onresize();
   $('nav-toggler').onclick=toggle_nav;
+  $('entries-toggler').onclick=toggle_entries;
   $('stream-prefs-menu-contents').childElements().concat([$('stream-prefs-menu')]).each(function(x) {
     x.onclick = function () {
       $('stream-prefs-menu-contents').toggleClassName('hidden')}});
   Ajax.Responders.register({
-    onCreate:function() {
-      $('entries-status').update('Ajax通信中...');
-    },
-    onComplete:function() {
-      $('entries-status').update('Ajax通信終了');
-    }
+    onCreate:function() {$('entries-status').update('Ajax通信中...')},
+    onComplete:function() {$('entries-status').update('Ajax通信終了')}
   });
-  $$('ul#sub-tree a.link').each(function (x) {
-    x.onclick = function() {return view_board(x)}});
   var e0 = $('view-cards1'),e1 = $('view-list1'),n = 'tab-header-selected';
   e0.onclick = function() {
     if (e1.hasClassName(n)) {
       e1.removeClassName(n);
       e0.addClassName(n);
-      clear_leftsection().appendChild(DL(current_data));
+      clear_dom('left-section').appendChild(DL(current_data));
     };
   };
   e1.onclick = function() {
@@ -369,9 +418,71 @@ function main() {
     $('stream-prefs-menu-contents').toggleClassName('hidden')
   };
   $('order-by-oldest').onclick = function(){
-    show_sorted_subjects(function(a,b) {return -1 * asc_rescount(a,b)});
-    $('stream-prefs-menu-contents').toggleClassName('hidden')
+    show_sorted_subjects(function(a,b) {return asc_rescount(b,a)});
+    $('stream-prefs-menu-contents').toggleClassName('hidden');
   };
+  //parse_bbsmenu();をktkr.htmlのロードのたび走らせるなんて冗談じゃない。
+  $$('ul#sub-tree a.link.bbsmenu').each(function (x) {
+    Event.observe(x,'click',function(e) {
+		    view_board(x);
+		    //イベント伝播を止めないと親のul.folderのonclickまで動いてしまう
+		    Event.stop(e);
+		    return false})});
+  $('sub-tree-show-new').onclick = function() {
+    $$('#sub-tree li.folder.collapsed').each(function(x) {x.onclick(x)})};
+  $('sub-tree-show-all').onclick = function() {
+    $$('#sub-tree li.folder.expanded').each(function(x) {x.onclick(x)})};
+  $('quick-add-bubble-holder').onclick = function() {
+    $('quick-add-bubble-holder').toggleClassName('hidden');
+  };
+  var query = window.location.search.toQueryParams();
+  if (query.board) {
+    var elt_a = $$('ul#sub-tree a.link.bbsmenu').detect(function(x){
+      var re = /board=([^&]+)/;
+      return (x.href.search(re) != -1 && x.href.match(re)[1] == query.board);
+    });
+    if (elt_a) {
+      toggle_nav();
+      //view_board(elt_a);
+    };
+    if (query.thread) {
+      toggle_entries();
+      view_thread(A({href:Object.toQueryString(query)}));
+    };
+  };
+}
+
+//bbsmenu.htmlを解析する関数。とても重い。
+//bbsmenu.htmlはせいぜい1週間ごとにしか更新されないので、
+//この関数をktkr.htmlのロードのたび走らせるなんて冗談じゃない。
+//開発者用ユーティリティと考えてください。
+//こいつの出力をktkr.htmlにハードコーディングするために使う。
+function parse_bbsmenu() {
+  var a = [];
+  var last = null;
+  $('bbsmenu_data').childElements().each(function(x) {
+      if (x.tagName == 'B') {
+	if (last && last.boards.length > 0) a.push(last);
+        last = {categoly: x.innerHTML, boards: []};
+      } else if (x.tagName == 'A' && x.href.search(/http:\/\/([^\/]+)\/([^\/]+)\/$/) != -1) {
+	last.boards.push({name: x.innerHTML,href: HTML_URL + '?board=' + x.href});
+      };
+    });
+  var subtree = $('sub-tree');
+  a.each(function(x) {
+    var elt = LI({className:'folder unselectable collapsed',onclick:"toggle_folder(this);"},[
+	       A({className:'link'},[
+		 IMG({width:16,height:16,alt:"",src:"tree-view-folder-closed.gif",className:"icon icon-d-1"}),
+		 SPAN({title:x.categoly,className:"name name-d-1 name-unread"},
+		   SPAN({className:"name-text name-text-d-1"},x.categoly))]),
+	       UL(x.boards.map(function(y){
+				 return LI({className:"sub unselectable collapsed unread"},
+				           A({href:y.href,className:'link bbsmenu'},
+					     SPAN({title:y.name,className:"name name-d-2"},
+					       SPAN({className:"name-text name-text-d-2"},y.name))));
+				   }))]);
+    subtree.appendChild(elt);
+  });
 }
 
 window.onload = main;

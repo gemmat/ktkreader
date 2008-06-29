@@ -634,7 +634,7 @@ input{
 }
 #quick-add-bubble-holder .c{
   background:#b5edbc;
-  width:300px;
+  /* modified width:300px; */
   padding:0 0 1px 8px
 }
 #quickadd{
@@ -2012,7 +2012,7 @@ body{
   padding:0.25em
 }
 #left-section{
-  /* modified width:65% */  
+  /* modified width:65%; */  
 }
 #right-section{
   width:35%;
@@ -3537,7 +3537,8 @@ body{
   background-image:url("corner_tl.gif");
   background-repeat:no-repeat;
   background-position:top left;
-  padding:3px 0 0 3px
+  /* modified padding:3px 0 0 3px */
+  padding:3px;
 }
 #viewer-box-inner{
   width:100%;
@@ -3818,10 +3819,31 @@ body{
 /* modified */
 #left-section{overflow-y:auto}
 #viewer-page-container1{margin-top:1em;}
-#viewer-header1{z-index:100;position:relative;right:20;top:0;zoom:1;background-color:#C3D9FF}
-#viewer-controls1{position:absolute;right:0;top:0}
+#viewer-header1{z-index:1;position:relative;right:20;top:0;zoom:1;background-color:#C3D9FF}
+#viewer-controls1{position:absolute;right:0;top:0;}
+#entries-toggler{
+  height:6px;
+  border:0;
+  border-right:1px dotted #fff;
+  cursor:pointer;
+  background:#fff url("arrow-up.gif") no-repeat center center;
+  margin:1em 3px 0 1px
+}
+#entries-toggler.hover{
+  background-color:#f3f3f3
+}
+.hide-entries #entries-toggler{
+  margin:0;
+  height:14px;
+  background-image:url("arrow-down.gif")
+}
 
+.hide-entries #viewer-box{
+  display: none;
+}
 
+#bbsmenu_data{ display: none; }
+#stream-prefs-menu-contents{ z-index:2; }
 @media print{
   body{
     background:none
