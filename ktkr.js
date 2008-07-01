@@ -3,6 +3,7 @@ var CGI_URL = '../cgi-bin/ktkreader/ktkr.cgi';
 var HTML_URL = './ktkr.html';
 var current_data = [];
 var current_subject = [];
+var id_extract_table = {};
 
 var Scheduler = Class.create({
   initialize: function () {
@@ -12,14 +13,16 @@ var Scheduler = Class.create({
   },
   push_queue: function(x) {
     this.expired_queue.push(x);
+    this.start();
   },
   concat_queues: function(l){
     this.expired_queue = this.expired_queue.concat(l);
+    this.start();
   },
   run: function () {
     if (this.active_queue.length > 0) {
       (this.active_queue.shift())();
-      setTimeout(this.run.bind(this),50);
+      setTimeout(this.run.bind(this),10);
     } else {
       this.running = false;
       this.start();
@@ -55,9 +58,16 @@ function parse_dat_and_display(o,h) {
 	if (a.length < 5) return [DT(),DD().update(line)];
 	if (a[4]) $('chrome-stream-title').down(1).update(a[4]);
 	var count = head+(i*partitions)+j;
-	var name = a[0].replace(/<\/b>([^<]*)<b>/g,"<b>$1</b>");
+	var name = "<span class='res-name'>" + a[0].replace(/<\/b>([^<]*)<b>/g,"<b>$1</b>") + "</span>";
 	var mail = a[1];
 	var date = a[2];
+	var id_re = /ID:(.+)/;
+	if (date.search(id_re) != -1) {
+	  var id = date.match(id_re)[1];
+	  if (!id_extract_table[id]) id_extract_table[id] = [];
+	  id_extract_table[id].push(count-1);
+	  date = date.replace(id_re,"<span class='res-id' onclick='id_onclick(this);'>ID:$1</span>");
+	};
 	var body = a[3].replace(
 	    /<a[^>]*>&gt\;&gt\;(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>').replace(
 	    /<a[^>]*>&gt\;&gt\;(\d{1,4})-(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1-$2" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1-$2</a>');
@@ -77,7 +87,6 @@ function parse_dat_and_display(o,h) {
       show_tree();
     };
   });
-  scheduler.start();
 }
 
 function show_tree() {
@@ -107,7 +116,7 @@ function show_tree() {
   //それを木に統合する。
   var tree = tree_merge(inversed_arr);
   //DL、DT、DDタグのツリーにして表示する。
-  var e = clear_dom('left-section');
+  var e = $clear('left-section');
   tree.each(function(x) {e.appendChild(dl_tree(x))});
 }
 
@@ -117,7 +126,12 @@ function show_tree() {
 function view_thread(elm) {
   var title = $('chrome-stream-title').down(1);
   title.href = elm.href;
-  title.onclick = function() {return view_thread_diff(elm)};
+  title.onclick = function() {
+    if (document.body.hasClassName('hide-entries')) {
+      toggle_entries();
+    };
+    return view_thread_diff(elm);
+  };
   $('thread-reload').onclick = function() {return view_thread_diff(elm)};
   var re = /board=(.*)&thread=(.*)/;
   if (elm.href.search(re) != -1) {
@@ -125,8 +139,9 @@ function view_thread(elm) {
     new Ajax.Request(CGI_URL,{
       parameters: {board:info[1],thread:info[2]},
       onComplete: function(o,h) {
-	current_data = [];
-	clear_dom('left-section').appendChild(DL());
+	scheduler.push_queue(function() {
+			       current_data = [];
+			       $clear('left-section').appendChild(DL())});
 	parse_dat_and_display(o,h);
       }
     });
@@ -154,7 +169,12 @@ function view_board(elm) {
   var title = $('chrome-stream-title').down(0);
   title.innerHTML = elm.down(1).innerHTML;
   title.href = elm.href;
-  title.onclick = function() {return view_board(elm)};
+  title.onclick = function() {
+    if (document.body.hasClassName('hide-entries')) {
+      toggle_entries();
+    };
+    return view_board(elm)
+  };
   $('viewer-refresh').onclick = function() {return view_board(elm)};
   $('chrome-stream-title').down(1).innerHTML = '';
   var re = /board=(.*)/;
@@ -163,7 +183,6 @@ function view_board(elm) {
     new Ajax.Request(CGI_URL,{
       parameters: {board:board},
       onComplete: function(o,h) {
-	current_subject = [];
 	subjects(board,o.responseText);
       }});
   };
@@ -172,7 +191,10 @@ function view_board(elm) {
 }
 
 function subjects(board,responseText) {
-  var entries = clear_dom('entries');
+  var entries = $('entries');
+  scheduler.push_queue(function() {
+			 $clear('entries');
+			 current_subject = [];});
   //板のsubject.txtを100行ごとに分割して処理をする。
   var subj = responseText.split('\n').eachSlice(100);
   scheduler.concat_queues(subj.map(function(lines){
@@ -205,23 +227,59 @@ function subjects(board,responseText) {
 	  entries.appendChild(elt);
 	}})}}));
   scheduler.push_queue(function(){ $('entries-status').update(''); });
-  scheduler.start();
 }
 
 function show_sorted_subjects(compfun) {
   var copy = current_subject.concat();
   copy.sort(compfun);
-  var entries = clear_dom('entries');
+  var entries = $clear('entries');
   copy.each(function(x) {entries.appendChild(x)});
+  $('stream-prefs-menu-contents').toggleClassName('hidden');
+}
+
+//スレッドのレス数をパースする。
+function parse_entry_rescount(x) {
+  var re = /(\d+)/;
+  var str = x.select('.entry-date')[0].innerHTML;
+  var parsed_rescount = null;
+  if (str.search(re) != -1) parsed_rescount = parseInt(str.match(re)[1]);
+  if (parsed_rescount && !isNaN(parsed_rescount)) return parsed_rescount;
+  return null;
+}
+
+//スレッドのキーをパースする。
+function parse_entry_unixtime(x) {
+  var re = /thread=(\d+)/;
+  var str = x.select('a.entry-title')[0].href;
+  var parsed_time = null;
+  if (str.search(re) != -1) parsed_time = parseInt(str.match(re)[1]);
+  if (parsed_time && !isNaN(parsed_time)) return parsed_time;
+  return null;
 }
 
 function asc_rescount(a,b){
+  var a_value = parse_entry_rescount(a);
+  var b_value = parse_entry_rescount(b);
+  if (a_value && b_value) {
+    if (a_value > b_value) return -1;
+    if (a_value < b_value) return 1;
+    if (a_value == b_value) return 0;
+  } else if (a_value) {
+    return -1;
+  } else if (b_value) {
+    return 1;
+  };
+  return 0;
+}
+
+function asc_pace(a,b) {
   function f(x) {
-    var re = /(\d+)/;
-    var str = x.select('.entry-date')[0].innerHTML;
-    if (str.search(re) != -1) {
-      var parsed_i = parseInt(str.match(re)[0]);
-      if (!isNaN(parsed_i)) return parsed_i;
+    var rescount = parse_entry_rescount(x);
+    if (rescount) {
+      var unixtime = parse_entry_unixtime(x);
+      if (unixtime) {
+	return rescount / ((Date.now()/1000).toFixed() - unixtime);
+      };
     };
     return null;
   };
@@ -306,7 +364,7 @@ function toggle_folder(elt) {
     elt.down(1).src='tree-view-folder-closed.gif';
   };
 }
-function clear_dom(elt) {
+function $clear(elt) {
   var e = $(elt);
   while(e.firstChild) e.removeChild(e.firstChild);
   return e;
@@ -325,6 +383,7 @@ function anchor_onclick(elt) {
   };
   return false;
 }
+
 function anchor_onhover(elt) {
   var re = /(\d+)$/;
   var href = null;
@@ -334,9 +393,32 @@ function anchor_onhover(elt) {
   };
   var e;
   if (href != null && current_data[href]) {
-    e = clear_dom('quick-add-instructions');
+    $('quick-add-subs').innerHTML = '';
+    e = $clear('quick-add-instructions');
     e.appendChild(DL([DT().update(current_data[href][0].innerHTML),
 		      DD().update(current_data[href][1].innerHTML)]));
+  };
+  e = $('quick-add-bubble-holder');
+  var pos = elt.viewportOffset();
+  //150pxにはなんの根拠もない。
+  pos.left+=150;
+  pos.top-=150;
+  e.setStyle(pos);
+  if (e.hasClassName('hidden')) e.removeClassName('hidden');
+}
+
+//ID抽出。
+function id_onclick(elt) {
+  var re = /ID:(.+)/;
+  var id = null;
+  if (elt.innerHTML && elt.innerHTML.search(re) != -1) id = elt.innerHTML.match(re)[1];
+  var e;
+  if (id != null && id_extract_table[id]) {
+    $('quick-add-subs').update('ID抽出結果(' + id_extract_table[id].length +'件)');
+    e = $clear('quick-add-instructions');
+    e.appendChild(DL(id_extract_table[id].map(function(x) {
+						return [DT().update(current_data[x][0].innerHTML),
+							DD().update(current_data[x][1].innerHTML)]})));
   };
   e = $('quick-add-bubble-holder');
   var pos = elt.viewportOffset();
@@ -403,7 +485,7 @@ function main() {
     if (e1.hasClassName(n)) {
       e1.removeClassName(n);
       e0.addClassName(n);
-      clear_dom('left-section').appendChild(DL(current_data));
+      $clear('left-section').appendChild(DL(current_data));
     };
   };
   e1.onclick = function() {
@@ -413,14 +495,10 @@ function main() {
       show_tree();
     };
   };
-  $('order-by-newest').onclick = function(){
-    show_sorted_subjects(asc_rescount);
-    $('stream-prefs-menu-contents').toggleClassName('hidden')
-  };
-  $('order-by-oldest').onclick = function(){
-    show_sorted_subjects(function(a,b) {return asc_rescount(b,a)});
-    $('stream-prefs-menu-contents').toggleClassName('hidden');
-  };
+  $('order-by-newest').onclick = function(){show_sorted_subjects(asc_rescount)};
+  $('order-by-oldest').onclick = function(){show_sorted_subjects(function(a,b) {return asc_rescount(b,a)})};
+  $('stream-unsubscribe').onclick = function(){show_sorted_subjects(function(a,b) {return asc_pace(a,b)})};
+  $('stream-rename').onclick = function(){show_sorted_subjects(function(a,b) {return asc_pace(b,a)})};
   //parse_bbsmenu();をktkr.htmlのロードのたび走らせるなんて冗談じゃない。
   $$('ul#sub-tree a.link.bbsmenu').each(function (x) {
     Event.observe(x,'click',function(e) {
@@ -429,9 +507,15 @@ function main() {
 		    Event.stop(e);
 		    return false})});
   $('sub-tree-show-new').onclick = function() {
-    $$('#sub-tree li.folder.collapsed').each(function(x) {x.onclick(x)})};
+    scheduler.concat_queues($$('#sub-tree li.folder.collapsed').eachSlice(10).map(function(l) {
+      return function(){
+	l.each(function(x) {
+		 x.onclick(x)})}}))};
   $('sub-tree-show-all').onclick = function() {
-    $$('#sub-tree li.folder.expanded').each(function(x) {x.onclick(x)})};
+    scheduler.concat_queues($$('#sub-tree li.folder.expanded').eachSlice(10).map(function(l) {
+      return function(){
+	l.each(function(x) {
+		 x.onclick(x)})}}))};
   $('quick-add-bubble-holder').onclick = function() {
     $('quick-add-bubble-holder').toggleClassName('hidden');
   };
@@ -443,7 +527,7 @@ function main() {
     });
     if (elt_a) {
       toggle_nav();
-      //view_board(elt_a);
+      view_board(elt_a);
     };
     if (query.thread) {
       toggle_entries();

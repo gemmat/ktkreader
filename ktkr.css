@@ -3844,6 +3844,9 @@ body{
 
 #bbsmenu_data{ display: none; }
 #stream-prefs-menu-contents{ z-index:2; }
+span.res-name{ color: green; font-weight:bold; }
+#left-section dd { margin:0.5em 0pt 0.7em 2em; }
+
 @media print{
   body{
     background:none

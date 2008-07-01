@@ -6105,7 +6105,7 @@
 		      <td class="bbr">
 			<div class="button-body-container">
 			  <div class="button-menu-arrow"></div>
-			  <span class="button-body unselectable">設定...</span></div>
+			  <span class="button-body unselectable">並び替え</span></div>
 		      </td>
 		    </tr>
 		  </tbody>
@@ -6158,19 +6158,15 @@
 		<li class="reading-list-menu-item folder-menu-item single-feed-menu-item friend-stream-menu-item menu-item"
 		    id="order-by-oldest">
 		  <span class="menu-item-label">レスの少ない順</span></li>
-		<li class="reading-list-menu-item folder-menu-item menu-item"
-		    id="order-by-magic">
-		  <span class="menu-item-label">未定</span></li>
-		<li class="reading-list-menu-item divider menu-item"
-		    id="set-as-start">
-		  <span class="menu-item-label">未定</span></li>
-		<li class="single-feed-menu-item divider menu-item"
-		    id="stream-unsubscribe">
-		  <span class="menu-item-label">未定</span></li>
+		<li class="reading-list-menu-item folder-menu-item menu-item" id="order-by-magic">
+		  <span class="menu-item-label"></span></li>
+		<li class="reading-list-menu-item divider menu-item" id="set-as-start">
+		  <span class="menu-item-label"></span></li>
+		<li class="single-feed-menu-item divider menu-item" id="stream-unsubscribe">
+		  <span class="menu-item-label">勢いのある順</span></li>
 		<li class="single-feed-menu-item menu-item" id="stream-rename">
-		  <span class="menu-item-label">未定...</span></li>
-		<li class="single-feed-menu-item friend-stream-menu-item divider menu-item"
-		    id="stream-folder-chooser"></li>
+		  <span class="menu-item-label">勢いのない順</span></li>
+		<li class="single-feed-menu-item friend-stream-menu-item divider menu-item" id="stream-folder-chooser"></li>
 	      </ul>
 	    </div>
 	  </div>
@@ -6274,6 +6270,7 @@
 		<tr>
 		  <td class="s"/>
 		  <td class="c">
+		    <span id="quick-add-subs"></span>
 		    <span id="quick-add-instructions"></span>
 		  </td>
 		  <td class="s"/>
