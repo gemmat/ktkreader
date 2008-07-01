@@ -69,9 +69,15 @@ function parse_dat_and_display(o,h) {
 	  date = date.replace(id_re,"<span class='res-id' onclick='id_onclick(this);'>ID:$1</span>");
 	};
 	var body = a[3].replace(
-	    /<a[^>]*>&gt\;&gt\;(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>').replace(
-	    /<a[^>]*>&gt\;&gt\;(\d{1,4})-(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1-$2" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1-$2</a>');
-	      return [DT().update(count + " :"+name+":"+mail+":"+date), DD().update(body)]}).compact();
+	    /<a[^>]*>&gt\;&gt\;(\d{1,4})<\/a>/g,
+	    '<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>').replace(
+	    /<a[^>]*>&gt\;&gt\;(\d{1,4})-(\d{1,4})<\/a>/g,
+	    '<a class="thread-ref" href="#$1-$2" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1-$2</a>').replace(
+	    /(((ht|f|t)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(:?(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?/g,
+	    '<a href=$&>$&</a>').replace(
+	    /href=ttp/g,
+	    'href=http');
+        return [DT().update(count + " :"+name+":"+mail+":"+date), DD().update(body)]}).compact();
       current_data = current_data.concat(l);
       l.each(function(x) {
 	var dl = $('left-section').down();
@@ -88,6 +94,16 @@ function parse_dat_and_display(o,h) {
     };
   });
 }
+
+// /^(((ht|f)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|(.*))/;
+// /((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(\?(\.?\d)\.)){4})/;
+// /^(((ht|f)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(?(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?$/
+// /(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?$/
+
+
+var re = /^(((ht|f)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(:?(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?$/;
+;
+
 
 function show_tree() {
   function dl_tree(t) {
@@ -229,11 +245,21 @@ function subjects(board,responseText) {
   scheduler.push_queue(function(){ $('entries-status').update(''); });
 }
 
-function show_sorted_subjects(compfun) {
-  var copy = current_subject.concat();
-  copy.sort(compfun);
+function show_sorted_subjects(f,asc) {
+  var arr = current_subject.map(function(x) {return [f(x),x]});
+  arr.sort(function(a,b) {
+	     if (a[0] && b[0]) {
+	       if (a[0] > b[0]) return -1 * asc;
+	       if (a[0] < b[0]) return 1 * asc;
+	       if (a[0] == b[0]) return 0;
+	     } else if (a[0]) {
+	       return -1 * asc;
+	     } else if (b[0]) {
+	       return 1 * asc;
+	     };
+	     return 0});
   var entries = $clear('entries');
-  copy.each(function(x) {entries.appendChild(x)});
+  arr.each(function(x) {entries.appendChild(x[1])});
   $('stream-prefs-menu-contents').toggleClassName('hidden');
 }
 
@@ -257,44 +283,15 @@ function parse_entry_unixtime(x) {
   return null;
 }
 
-function asc_rescount(a,b){
-  var a_value = parse_entry_rescount(a);
-  var b_value = parse_entry_rescount(b);
-  if (a_value && b_value) {
-    if (a_value > b_value) return -1;
-    if (a_value < b_value) return 1;
-    if (a_value == b_value) return 0;
-  } else if (a_value) {
-    return -1;
-  } else if (b_value) {
-    return 1;
-  };
-  return 0;
-}
-
-function asc_pace(a,b) {
-  function f(x) {
-    var rescount = parse_entry_rescount(x);
-    if (rescount) {
-      var unixtime = parse_entry_unixtime(x);
-      if (unixtime) {
-	return rescount / ((Date.now()/1000).toFixed() - unixtime);
-      };
+function calc_entry_pace(x) {
+  var rescount = parse_entry_rescount(x);
+  if (rescount) {
+    var unixtime = parse_entry_unixtime(x);
+    if (unixtime) {
+      return rescount / ((Date.now()/1000).toFixed() - unixtime);
     };
-    return null;
   };
-  var a_value = f(a);
-  var b_value = f(b);
-  if (a_value && b_value) {
-    if (a_value > b_value) return -1;
-    if (a_value < b_value) return 1;
-    if (a_value == b_value) return 0;
-  } else if (a_value) {
-    return -1;
-  } else if (b_value) {
-    return 1;
-  };
-  return 0;
+  return null;
 }
 
 // Wiliki:Scheme:リスト処理にあったSchemeコードをそのままJavaScriptに移植したもの。
@@ -495,10 +492,10 @@ function main() {
       show_tree();
     };
   };
-  $('order-by-newest').onclick = function(){show_sorted_subjects(asc_rescount)};
-  $('order-by-oldest').onclick = function(){show_sorted_subjects(function(a,b) {return asc_rescount(b,a)})};
-  $('stream-unsubscribe').onclick = function(){show_sorted_subjects(function(a,b) {return asc_pace(a,b)})};
-  $('stream-rename').onclick = function(){show_sorted_subjects(function(a,b) {return asc_pace(b,a)})};
+  $('order-by-newest').onclick = function(){show_sorted_subjects(parse_entry_rescount,1)};
+  $('order-by-oldest').onclick = function(){show_sorted_subjects(parse_entry_rescount,-1)};
+  $('stream-unsubscribe').onclick = function(){show_sorted_subjects(calc_entry_pace,1)};
+  $('stream-rename').onclick = function(){show_sorted_subjects(calc_entry_pace,-1)};
   //parse_bbsmenu();をktkr.htmlのロードのたび走らせるなんて冗談じゃない。
   $$('ul#sub-tree a.link.bbsmenu').each(function (x) {
     Event.observe(x,'click',function(e) {
