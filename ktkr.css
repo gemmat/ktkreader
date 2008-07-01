@@ -3161,7 +3161,7 @@ body{
   width:auto;
   overflow:hidden;
   display:block;
-  position:absolute;
+  /* modified for IE(i dont know why this works.) position:absolute; */
   top:1px;
   left:0
 }

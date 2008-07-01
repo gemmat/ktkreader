@@ -55,7 +55,7 @@ function parse_dat_and_display(o,h) {
 	// 名無し<>sage<>2008/12/25 12:01:00 ID foobarrr<>1乙<>
 	// </b>名無し<b><>sage<>2008/12/25 12:01:30 ID hogehoge<>1GJ!<>
 	var a = line.split('<>');
-	if (a.length < 5) return [DT(),DD().update(line)];
+	if (a.length < 5) return [DT(),$(DD()).update(line)];
 	if (a[4]) $('chrome-stream-title').down(1).update(a[4]);
 	var count = head+(i*partitions)+j;
 	var name = "<span class='res-name'>" + a[0].replace(/<\/b>([^<]*)<b>/g,"<b>$1</b>") + "</span>";
@@ -73,11 +73,11 @@ function parse_dat_and_display(o,h) {
 	    '<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>').replace(
 	    /<a[^>]*>&gt\;&gt\;(\d{1,4})-(\d{1,4})<\/a>/g,
 	    '<a class="thread-ref" href="#$1-$2" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1-$2</a>').replace(
-	    /(((ht|f|t)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(:?(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?/g,
+		/(((ht|f|t)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(?:(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?/g,
 	    '<a href=$&>$&</a>').replace(
 	    /href=ttp/g,
 	    'href=http');
-        return [DT().update(count + " :"+name+":"+mail+":"+date), DD().update(body)]}).compact();
+	return [$(DT()).update(count + " :"+name+":"+mail+":"+date), $(DD()).update(body)]});
       current_data = current_data.concat(l);
       l.each(function(x) {
 	var dl = $('left-section').down();
@@ -95,16 +95,6 @@ function parse_dat_and_display(o,h) {
   });
 }
 
-// /^(((ht|f)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|(.*))/;
-// /((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(\?(\.?\d)\.)){4})/;
-// /^(((ht|f)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(?(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?$/
-// /(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?$/
-
-
-var re = /^(((ht|f)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(:?(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?$/;
-;
-
-
 function show_tree() {
   function dl_tree(t) {
     //Convert it to a '<dl><dd><dt>...<dd><dt></dl>'.
@@ -116,7 +106,7 @@ function show_tree() {
   };
   // アンカの関係から"隣接リスト"を作る。
   var arr = current_data.map(function(x,i) {
-			       var hrefs = x[1].select('a.thread-ref').map(function(x) {
+			       var hrefs = $(x[1]).select('a.thread-ref').map(function(x) {
 									     var re = /(\d+)$/;
 									     if (x.href && x.href.search(re) != -1) {
 									       var p = parseInt(x.href.match(re)[1]);
@@ -143,7 +133,7 @@ function view_thread(elm) {
   var title = $('chrome-stream-title').down(1);
   title.href = elm.href;
   title.onclick = function() {
-    if (document.body.hasClassName('hide-entries')) {
+    if ($(document.body).hasClassName('hide-entries')) {
       toggle_entries();
     };
     return view_thread_diff(elm);
@@ -186,7 +176,7 @@ function view_board(elm) {
   title.innerHTML = elm.down(1).innerHTML;
   title.href = elm.href;
   title.onclick = function() {
-    if (document.body.hasClassName('hide-entries')) {
+    if ($(document.body).hasClassName('hide-entries')) {
       toggle_entries();
     };
     return view_board(elm)
@@ -266,7 +256,7 @@ function show_sorted_subjects(f,asc) {
 //スレッドのレス数をパースする。
 function parse_entry_rescount(x) {
   var re = /(\d+)/;
-  var str = x.select('.entry-date')[0].innerHTML;
+  var str = $(x).select('.entry-date')[0].innerHTML;
   var parsed_rescount = null;
   if (str.search(re) != -1) parsed_rescount = parseInt(str.match(re)[1]);
   if (parsed_rescount && !isNaN(parsed_rescount)) return parsed_rescount;
@@ -276,7 +266,7 @@ function parse_entry_rescount(x) {
 //スレッドのキーをパースする。
 function parse_entry_unixtime(x) {
   var re = /thread=(\d+)/;
-  var str = x.select('a.entry-title')[0].href;
+  var str = $(x).select('a.entry-title')[0].href;
   var parsed_time = null;
   if (str.search(re) != -1) parsed_time = parseInt(str.match(re)[1]);
   if (parsed_time && !isNaN(parsed_time)) return parsed_time;
@@ -287,9 +277,8 @@ function calc_entry_pace(x) {
   var rescount = parse_entry_rescount(x);
   if (rescount) {
     var unixtime = parse_entry_unixtime(x);
-    if (unixtime) {
-      return rescount / ((Date.now()/1000).toFixed() - unixtime);
-    };
+    var d = new Date();
+    if (unixtime) return rescount / ((d.getTime()/1000).toFixed() - unixtime);
   };
   return null;
 }
@@ -338,21 +327,22 @@ function tree_merge(relations) {
 }
 
 function toggle_nav() {
-  document.body.toggleClassName('hide-nav');
-  if (document.body.hasClassName('hide-nav')) {
-    $('chrome').setStyle({marginLeft: '15px;'});
+  $(document.body).toggleClassName('hide-nav');
+  if ($(document.body).hasClassName('hide-nav')) {
+    $('chrome').setStyle({marginLeft: '15px'});
   } else {
-    $('chrome').setStyle({marginLeft: ''});
+    $('chrome').setStyle({marginLeft: '282px'});
   }
   onresize();
 }
 
 function toggle_entries() {
-  document.body.toggleClassName('hide-entries');
+  $(document.body).toggleClassName('hide-entries');
   onresize();
 }
 
 function toggle_folder(elt) {
+  var elt = $(elt);
   elt.toggleClassName('collapsed');
   elt.toggleClassName('expanded');
   if (elt.hasClassName('expanded')) {
@@ -361,8 +351,8 @@ function toggle_folder(elt) {
     elt.down(1).src='tree-view-folder-closed.gif';
   };
 }
-function $clear(elt) {
-  var e = $(elt);
+function $clear(e) {
+  var e = $(e);
   while(e.firstChild) e.removeChild(e.firstChild);
   return e;
 }
@@ -392,15 +382,15 @@ function anchor_onhover(elt) {
   if (href != null && current_data[href]) {
     $('quick-add-subs').innerHTML = '';
     e = $clear('quick-add-instructions');
-    e.appendChild(DL([DT().update(current_data[href][0].innerHTML),
-		      DD().update(current_data[href][1].innerHTML)]));
+    e.appendChild(DL([$(DT()).update(current_data[href][0].innerHTML),
+		      $(DD()).update(current_data[href][1].innerHTML)]));
   };
   e = $('quick-add-bubble-holder');
-  var pos = elt.viewportOffset();
+  var pos = $(elt).viewportOffset();
   //150pxにはなんの根拠もない。
-  pos.left+=150;
-  pos.top-=150;
-  e.setStyle(pos);
+  pos.left += 150;
+  pos.top -= 150;
+  e.setStyle({left:pos.left + 'px',top:pos.top + 'px'});
   if (e.hasClassName('hidden')) e.removeClassName('hidden');
 }
 
@@ -414,15 +404,15 @@ function id_onclick(elt) {
     $('quick-add-subs').update('ID抽出結果(' + id_extract_table[id].length +'件)');
     e = $clear('quick-add-instructions');
     e.appendChild(DL(id_extract_table[id].map(function(x) {
-						return [DT().update(current_data[x][0].innerHTML),
-							DD().update(current_data[x][1].innerHTML)]})));
+						return [$(DT()).update(current_data[x][0].innerHTML),
+							$(DD()).update(current_data[x][1].innerHTML)]})));
   };
   e = $('quick-add-bubble-holder');
-  var pos = elt.viewportOffset();
+  var pos = $(elt).viewportOffset();
   //150pxにはなんの根拠もない。
-  pos.left+=150;
-  pos.top-=150;
-  e.setStyle(pos);
+  pos.left += 150;
+  pos.top -= 150;
+  e.setStyle({left:pos.left + 'px',top:pos.top + 'px'});
   if (e.hasClassName('hidden')) e.removeClassName('hidden');
 }
 
@@ -455,7 +445,7 @@ function onresize() {
   var w = calcSize();
   var e1 = $('chrome-footer-container'),e2 = $('viewer-box-table'), e3 = $('viewer-header');
   var f1 = $('selectors-box'),f2 = $('add-box');
-  if (document.body.hasClassName('hide-entries')) {
+  if ($(document.body).hasClassName('hide-entries')) {
     a.style.height = w[0]-e1.offsetHeight-e3.offsetHeight-30;
   } else {
     a.style.height = w[0]-e1.offsetHeight-e2.offsetHeight-50;
@@ -465,7 +455,7 @@ function onresize() {
 }
 
 function main() {
-  if (Prototype.Browser.IE) document.body.addClassName('ie6');
+  if (Prototype.Browser.IE) $(document.body).addClassName('ie6');
   Builder.dump();
   onresize();
   $('nav-toggler').onclick=toggle_nav;
