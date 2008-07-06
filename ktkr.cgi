@@ -34,8 +34,7 @@
       (cgi-add-temporary-file diff)
       (cgi-add-temporary-file sum)
       (process-output->string (format #f "gzip -cdf ~a > ~a" orig-gz orig))
-      (let ((orig-bytes (file-size orig))
-	    (orig-lines (x->integer (string-scan (process-output->string `(wc -l ,orig)) #\space 'before))))
+      (let ((orig-bytes (file-size orig)))
 	(cut-file->string-list
 	 head
 	 (if (string=? "206" (call-with-output-file diff

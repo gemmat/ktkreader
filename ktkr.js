@@ -1,5 +1,5 @@
 //TODO 'ul#sub-tree a.link' たちに持たせているhrefプロパティのboardクエリパラメータはuri-encodeするべき
-var CGI_URL = '../cgi-bin/ktkreader/ktkr.cgi';
+var CGI_URL = './ktkr.cgi';
 var HTML_URL = './ktkr.html';
 var current_data = [];
 var current_subject = [];
@@ -40,6 +40,21 @@ var Scheduler = Class.create({
 });
 var scheduler = new Scheduler();
 
+Array.prototype.filtermap = function(iterator, context) {
+  iterator = iterator ? iterator.bind(context) : Prototype.K;
+  var results = [];
+  var correction = 0
+  this.each(function(value, index) {
+    var v = iterator(value, index - correction);
+    if (v)
+      results.push(v);
+    else
+      correction++;
+  });
+  return results;
+};
+
+
 function parse_dat_and_display(o,h) {
   var head = current_data.length + 1;
   var partitions = 100;
@@ -48,14 +63,14 @@ function parse_dat_and_display(o,h) {
   scheduler.concat_queues(datl.map(function(x,i) {
     return function() {
       $('entries-status').update('スレ描画中...');
-      var l = x.map(function(line,j) {
+      var l = x.filtermap(function(line,j) {
 	// DATファイルの仕様として、1行めに"スレタイ"が入っていることに注意せよ
 	// DATファイルの例
 	// 名無し<>sage<>2008/12/25 12:00:00 ID deadbeef<>ああああorz<>Lispを語るスレ(345)
 	// 名無し<>sage<>2008/12/25 12:01:00 ID foobarrr<>1乙<>
 	// </b>名無し<b><>sage<>2008/12/25 12:01:30 ID hogehoge<>1GJ!<>
 	var a = line.split('<>');
-	if (a.length < 5) return [DT(),$(DD()).update(line)];
+	if (a.length < 5) return null;
 	if (a[4]) $('chrome-stream-title').down(1).update(a[4]);
 	var count = head+(i*partitions)+j;
 	var name = "<span class='res-name'>" + a[0].replace(/<\/b>([^<]*)<b>/g,"<b>$1</b>") + "</span>";
@@ -106,14 +121,14 @@ function show_tree() {
   };
   // アンカの関係から"隣接リスト"を作る。
   var arr = current_data.map(function(x,i) {
-			       var hrefs = $(x[1]).select('a.thread-ref').map(function(x) {
+			       var hrefs = $(x[1]).select('a.thread-ref').filtermap(function(x) {
 									     var re = /(\d+)$/;
 									     if (x.href && x.href.search(re) != -1) {
 									       var p = parseInt(x.href.match(re)[1]);
 									       return isNaN(p) ? null : p-1;
 									     };
 									     return null;
-									   }).compact();
+									  });
 			       return (hrefs.length > 0 && hrefs.max() < i && hrefs.max())});
   //"隣接リスト"を転置する。
   var inversed_arr = arr.map(function(x,i) {return [i]});
@@ -346,9 +361,9 @@ function toggle_folder(elt) {
   elt.toggleClassName('collapsed');
   elt.toggleClassName('expanded');
   if (elt.hasClassName('expanded')) {
-    elt.down(1).src='tree-view-folder-open.gif';
+    elt.down(1).src='images/tree-view-folder-open.gif';
   } else {
-    elt.down(1).src='tree-view-folder-closed.gif';
+    elt.down(1).src='images/tree-view-folder-closed.gif';
   };
 }
 function $clear(e) {

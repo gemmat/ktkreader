@@ -653,7 +653,7 @@ input{
 }
 #quick-add-subs,#add-box #add-subs{
   font-weight:bold;
-  font-size:105%;
+  font-size:80%;
   background-position:0 3px
 }
 #add-box #add-subs{
@@ -662,7 +662,7 @@ input{
 #quick-add-helptext,#quick-add-instructions{
   clear:both;
   color:#555;
-  font-size:90%
+  font-size:80%
 }
 #quick-add-helptext a{
   font-weight:bold
@@ -2913,10 +2913,10 @@ body{
   display:none
 }
 .entry .entry-actions .read-state-read,.entry .entry-actions .read-state-kept-unread{
-  background-image:url("/icon-checked.gif")
+  background-image:url("icon-checked.gif")
 }
 .entry .entry-actions .read-state-unread,.entry .entry-actions .read-state-not-kept-unread{
-  background-image:url("/icon-unchecked.gif")
+  background-image:url("icon-unchecked.gif")
 }
 .entry .entry-actions .broadcast-with-note{
   background-image:url("icon-posted-items.gif")
