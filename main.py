@@ -5,6 +5,7 @@ from StringIO import StringIO
 import cgi
 import wsgiref.handlers
 import codecs
+import urllib
 import logging
 
 from google.appengine.ext import webapp
@@ -129,7 +130,7 @@ def get_dat(board,thread):
 
 class KtkrHandler(webapp.RequestHandler):
   def post(self):
-    board = self.request.get('board')
+    board = urllib.unquote(self.request.get('board'));
     thread = self.request.get('thread')
     head = self.request.get('head')
     if head.isdigit():
@@ -150,7 +151,7 @@ class KtkrHandler(webapp.RequestHandler):
     elif board and board_dict.has_key(board):
       content = get_subject(board)
     else:
-      content = 'error'
+      content = 'error %s %s %s %s' % (board,board_dict.has_key(board),thread,thread.isdigit())
 
     self.response.headers['Content-Type'] = 'text/plain'
     if content:

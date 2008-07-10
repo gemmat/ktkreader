@@ -1,3 +1,4 @@
+// コード規約 eachメソッド、mapメソッドのカウンタはi,j,k...とする。for文のカウンタはs,t,u...とする。
 //TODO 'ul#sub-tree a.link' たちに持たせているhrefプロパティのboardクエリパラメータはuri-encodeするべき
 var CGI_URL = './ktkr.cgi';
 var HTML_URL = './ktkr.html';
@@ -46,7 +47,7 @@ Array.prototype.filtermap = function(iterator, context) {
   var correction = 0
   this.each(function(value, index) {
     var v = iterator(value, index - correction);
-    if (v)
+    if (v !== false && v !== null)
       results.push(v);
     else
       correction++;
@@ -54,25 +55,34 @@ Array.prototype.filtermap = function(iterator, context) {
   return results;
 };
 
-
 function parse_dat_and_display(o,h) {
   var head = current_data.length + 1;
-  var partitions = 100;
+  var partitions = 150;
   //スレのdatをpartitions行ごとに分割して処理をする。
   var datl = o.responseText.split('\n').eachSlice(partitions);
-  scheduler.concat_queues(datl.map(function(x,i) {
+  //レスを挿入するDLタグ
+  scheduler.concat_queues(datl.map(function(lines,i) {
     return function() {
-      $('entries-status').update('スレ描画中...');
-      var l = x.filtermap(function(line,j) {
+      $('entries-status').innerHTML = 'スレ描画中...';
+      var l = [];
+      var correction = 0;
+      for (var s = 0; s < lines.length; s++) {
+	var line = lines[s];
 	// DATファイルの仕様として、1行めに"スレタイ"が入っていることに注意せよ
 	// DATファイルの例
 	// 名無し<>sage<>2008/12/25 12:00:00 ID deadbeef<>ああああorz<>Lispを語るスレ(345)
 	// 名無し<>sage<>2008/12/25 12:01:00 ID foobarrr<>1乙<>
 	// </b>名無し<b><>sage<>2008/12/25 12:01:30 ID hogehoge<>1GJ!<>
 	var a = line.split('<>');
-	if (a.length < 5) return null;
-	if (a[4]) $('chrome-stream-title').down(1).update(a[4]);
-	var count = head+(i*partitions)+j;
+	if (a.length < 5) {
+	  correction++;
+	  continue;
+	};
+	if (a[4]) {
+	  document.title = a[4];
+	  $('chrome-stream-title').down(1).innerHTML = a[4];
+	};
+	var count = head+(i*partitions)+s-correction;
 	var name = "<span class='res-name'>" + a[0].replace(/<\/b>([^<]*)<b>/g,"<b>$1</b>") + "</span>";
 	var mail = a[1];
 	var date = a[2];
@@ -83,27 +93,24 @@ function parse_dat_and_display(o,h) {
 	  id_extract_table[id].push(count-1);
 	  date = date.replace(id_re,"<span class='res-id' onclick='id_onclick(this);'>ID:$1</span>");
 	};
-	var body = a[3].replace(
-	    /<a[^>]*>&gt\;&gt\;(\d{1,4})<\/a>/g,
-	    '<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>').replace(
-	    /<a[^>]*>&gt\;&gt\;(\d{1,4})-(\d{1,4})<\/a>/g,
-	    '<a class="thread-ref" href="#$1-$2" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1-$2</a>').replace(
-		/(((ht|f|t)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(?:(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?/g,
-	    '<a href=$&>$&</a>').replace(
-	    /href=ttp/g,
-	    'href=http');
-	return [$(DT()).update(count + " :"+name+":"+mail+":"+date), $(DD()).update(body)]});
+	var body = a[3].replace(/<a[^>]*>&gt\;&gt\;(\d{1,4})-(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>-<a class="thread-ref" href="#$2" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">$2</a>').replace(/<a[^>]*>&gt\;&gt\;(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>').replace(/(((ht|f|t)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(?:(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?/g,'<a href=$&>$&</a>').replace(/href=ttp/g,'href=http');
+	var dt_dd = [DT(),DD()];
+	dt_dd[0].innerHTML = count + " :"+name+":"+mail+":"+date;
+	dt_dd[1].innerHTML = body;
+	l.push(dt_dd);
+      };
       current_data = current_data.concat(l);
-      l.each(function(x) {
-	var dl = $('left-section').down();
-	dl.appendChild(x[0]);
-	dl.appendChild(x[1]);
-      });
+      var frag = document.createDocumentFragment();
+      for (var s = 0; s < l.length; s++) {
+	frag.appendChild(l[s][0]);
+	frag.appendChild(l[s][1]);
+      };
+      $('left-section').down().appendChild(frag);
     }}));
   //完了のタスク。ツリー表示は描画をやりなおすことになっている。
   //逐次的にツリーを描画する方法はあるだろうけどまだわからん。
   scheduler.push_queue(function() {
-    $('entries-status').update('完了');
+    $('entries-status').innerHTML = '完了';
     if ($('view-list1').hasClassName('tab-header-selected')) {
       show_tree();
     };
@@ -120,25 +127,33 @@ function show_tree() {
     };
   };
   // アンカの関係から"隣接リスト"を作る。
-  var arr = current_data.map(function(x,i) {
-			       var hrefs = $(x[1]).select('a.thread-ref').filtermap(function(x) {
-									     var re = /(\d+)$/;
-									     if (x.href && x.href.search(re) != -1) {
-									       var p = parseInt(x.href.match(re)[1]);
-									       return isNaN(p) ? null : p-1;
-									     };
-									     return null;
-									  });
-			       return (hrefs.length > 0 && hrefs.max() < i && hrefs.max())});
-  //"隣接リスト"を転置する。
-  var inversed_arr = arr.map(function(x,i) {return [i]});
-  arr.each(function(x,i) {
-	     if (x!==false) inversed_arr[x].push(i)});
+  var arr = new Array(current_data.length);
+  var inversed_arr = new Array(current_data.length);
+  for (var s = 0; s < current_data.length; s++) {
+    var hrefs = $(current_data[s][1]).select('a.thread-ref');
+    var result = [];
+    for (var t = 0; t < hrefs.length; t++) {
+      var re = /(\d+)$/;
+      var a = hrefs[t];
+      if (a.href && a.href.search(re) != -1) {
+	var p = parseInt(a.href.match(re)[1]);
+	if (!isNaN(p)) result.push(p-1);
+      };
+    };
+    var adj = result.length > 0 && result.max() < s && result.max();
+    arr[s] = adj;
+    //"隣接リスト"を転置する。
+    // 親
+    inversed_arr[s] = [s];
+    // 子
+    // 前述のresult.max() < sは必要。さもないと、親より先に子がinversed_arrにpushされ例外が発生するので注意せよ。
+    if (adj !== false) inversed_arr[adj].push(s);
+  };
   //それを木に統合する。
   var tree = tree_merge(inversed_arr);
-  //DL、DT、DDタグのツリーにして表示する。
-  var e = $clear('left-section');
-  tree.each(function(x) {e.appendChild(dl_tree(x))});
+  //DL、DT、DDタグのツリーにして表示する。見栄えのために1段めだけはツリーをつぶす。
+  for (var s = 0; s < tree.length; s++) tree[s] = (tree[s].length == 1) ? tree[s][0] : tree[s];
+  $clear('left-section').appendChild(dl_tree(tree));
 }
 
 //TODO bbsmenu.htmlが通常の"http://game13.2ch.net/netgame"のほかに、"http://pink.net/","http://pink.net/adv.html","mailto" といったリンクを含むので弾く必要がある。
@@ -148,9 +163,7 @@ function view_thread(elm) {
   var title = $('chrome-stream-title').down(1);
   title.href = elm.href;
   title.onclick = function() {
-    if ($(document.body).hasClassName('hide-entries')) {
-      toggle_entries();
-    };
+    if ($(document.body).hasClassName('hide-entries')) toggle_entries();
     return view_thread_diff(elm);
   };
   $('thread-reload').onclick = function() {return view_thread_diff(elm)};
@@ -187,13 +200,12 @@ function view_thread_diff(elm) {
 
 //スレリスト更新
 function view_board(elm) {
+  document.title = elm.down(1).innerHTML;
   var title = $('chrome-stream-title').down(0);
   title.innerHTML = elm.down(1).innerHTML;
   title.href = elm.href;
   title.onclick = function() {
-    if ($(document.body).hasClassName('hide-entries')) {
-      toggle_entries();
-    };
+    if ($(document.body).hasClassName('hide-entries')) toggle_entries();
     return view_board(elm)
   };
   $('viewer-refresh').onclick = function() {return view_board(elm)};
@@ -213,6 +225,7 @@ function view_board(elm) {
 
 function subjects(board,responseText) {
   var entries = $('entries');
+  $('entries-status').innerHTML= '板描画中...';
   scheduler.push_queue(function() {
 			 $clear('entries');
 			 current_subject = [];});
@@ -220,11 +233,11 @@ function subjects(board,responseText) {
   var subj = responseText.split('\n').eachSlice(100);
   scheduler.concat_queues(subj.map(function(lines){
     return function() {
-      $('entries-status').update('板描画中...');
-      lines.each(function(x) {
+      var frag = document.createDocumentFragment();
+      for (var s = 0; s < lines.length; s++) {
 	var re = /(\d+).dat<>(.*)\((\d+)\)$/;
-	if (x.search(re) != -1) {
-	  var y = x.match(re);
+	if (lines[s].search(re) != -1) {
+	  var y = lines[s].match(re);
 	  var thread_key = y[1];
 	  var thread_title = y[2];
 	  var thread_rescount = y[3];
@@ -245,13 +258,16 @@ function subjects(board,responseText) {
 			   onclick:"return view_thread(this);"},
 			   thread_title))])]));
 	  current_subject.push(elt);
-	  entries.appendChild(elt);
-	}})}}));
-  scheduler.push_queue(function(){ $('entries-status').update(''); });
+	  frag.appendChild(elt);
+	};
+      };
+      entries.appendChild(frag);
+    }}));
+  scheduler.push_queue(function(){ $('entries-status').innerHTML = ''; });
 }
 
 function show_sorted_subjects(f,asc) {
-  var arr = current_subject.map(function(x) {return [f(x),x]});
+  var arr = current_subject.map(function(x,i) {return [f(x),i]});
   arr.sort(function(a,b) {
 	     if (a[0] && b[0]) {
 	       if (a[0] > b[0]) return -1 * asc;
@@ -264,28 +280,30 @@ function show_sorted_subjects(f,asc) {
 	     };
 	     return 0});
   var entries = $clear('entries');
-  arr.each(function(x) {entries.appendChild(x[1])});
+  var frag = document.createDocumentFragment();
+  for (var s = 0; s < arr.length; s++) frag.appendChild(current_subject[arr[s][1]]);
+  entries.appendChild(frag);
   $('stream-prefs-menu-contents').toggleClassName('hidden');
 }
 
 //スレッドのレス数をパースする。
 function parse_entry_rescount(x) {
-  var re = /(\d+)/;
   var str = $(x).select('.entry-date')[0].innerHTML;
-  var parsed_rescount = null;
+  var re = /(\d+)/;
+  var parsed_rescount = false;
   if (str.search(re) != -1) parsed_rescount = parseInt(str.match(re)[1]);
   if (parsed_rescount && !isNaN(parsed_rescount)) return parsed_rescount;
-  return null;
+  return false;
 }
 
 //スレッドのキーをパースする。
 function parse_entry_unixtime(x) {
-  var re = /thread=(\d+)/;
   var str = $(x).select('a.entry-title')[0].href;
-  var parsed_time = null;
+  var re = /thread=(\d+)/;
+  var parsed_time = false;
   if (str.search(re) != -1) parsed_time = parseInt(str.match(re)[1]);
   if (parsed_time && !isNaN(parsed_time)) return parsed_time;
-  return null;
+  return false;
 }
 
 function calc_entry_pace(x) {
@@ -295,17 +313,28 @@ function calc_entry_pace(x) {
     var d = new Date();
     if (unixtime) return rescount / ((d.getTime()/1000).toFixed() - unixtime);
   };
-  return null;
+  return false;
 }
 
 // Wiliki:Scheme:リスト処理にあったSchemeコードをそのままJavaScriptに移植したもの。
+// partitionが遅かったのでfor文にした。
 function tree_merge(relations) {
   function pick(node,trees,relations) {
-    var a = relations.partition(function(r) {return (node == r[0])});
-    var picked = a[0], rest = a[1];
+    var picked = [], rest = [];
+    for (var s = 0; s < relations.length; s++) {
+      if (node == relations[s][0])
+	picked.push(relations[s]);
+      else
+	rest.push(relations[s]);
+    };
     if (picked.length == 0) {
-      var b = trees.partition(function(t) {return (node == r[0])});
-      var subtree = b[0],other_trees = b[1];
+      var subtree = [],other_trees = [];
+      for (var s = 0; s < trees.length; s++) {
+	if (node == trees[s][0])
+	  subtree.push(trees[s]);
+	else
+	  other_trees.push(trees[s]);
+      };
       if (subtree.length == 0) {
 	return [[node],trees,relations];
       } else {
@@ -393,18 +422,18 @@ function anchor_onhover(elt) {
     var p = parseInt(elt.href.match(re)[1]);
     if (!isNaN(p)) href = p-1;
   };
-  var e;
+
   if (href != null && current_data[href]) {
     $('quick-add-subs').innerHTML = '';
-    e = $clear('quick-add-instructions');
-    e.appendChild(DL([$(DT()).update(current_data[href][0].innerHTML),
-		      $(DD()).update(current_data[href][1].innerHTML)]));
+    //DOM要素のコピーを行う。
+    $clear('quick-add-instructions').appendChild(DL([current_data[href][0].cloneNode(true),
+						     current_data[href][1].cloneNode(true)]));
   };
-  e = $('quick-add-bubble-holder');
+  var e = $('quick-add-bubble-holder');
   var pos = $(elt).viewportOffset();
-  //150pxにはなんの根拠もない。
-  pos.left += 150;
-  pos.top -= 150;
+  //130pxにはなんの根拠もない。
+  pos.left += 130;
+  pos.top -= 130;
   e.setStyle({left:pos.left + 'px',top:pos.top + 'px'});
   if (e.hasClassName('hidden')) e.removeClassName('hidden');
 }
@@ -414,15 +443,15 @@ function id_onclick(elt) {
   var re = /ID:(.+)/;
   var id = null;
   if (elt.innerHTML && elt.innerHTML.search(re) != -1) id = elt.innerHTML.match(re)[1];
-  var e;
+
   if (id != null && id_extract_table[id]) {
-    $('quick-add-subs').update('ID抽出結果(' + id_extract_table[id].length +'件)');
-    e = $clear('quick-add-instructions');
-    e.appendChild(DL(id_extract_table[id].map(function(x) {
-						return [$(DT()).update(current_data[x][0].innerHTML),
-							$(DD()).update(current_data[x][1].innerHTML)]})));
+    $('quick-add-subs').innerHTML = 'ID抽出結果(' + id_extract_table[id].length +'件)';
+    $clear('quick-add-instructions').appendChild(DL(id_extract_table[id].map(function(x) {
+      //DOM要素のコピーを行う。
+      return [current_data[x][0].cloneNode(true),
+	      current_data[x][1].cloneNode(true)]})));
   };
-  e = $('quick-add-bubble-holder');
+  var e = $('quick-add-bubble-holder');
   var pos = $(elt).viewportOffset();
   //150pxにはなんの根拠もない。
   pos.left += 150;
@@ -475,12 +504,12 @@ function main() {
   onresize();
   $('nav-toggler').onclick=toggle_nav;
   $('entries-toggler').onclick=toggle_entries;
-  $('stream-prefs-menu-contents').childElements().concat([$('stream-prefs-menu')]).each(function(x) {
-    x.onclick = function () {
-      $('stream-prefs-menu-contents').toggleClassName('hidden')}});
+  $('stream-prefs-menu').onclick = function () {$('stream-prefs-menu-contents').toggleClassName('hidden')};
+  $('stream-prefs-menu-contents').childElements().each(function(x) {
+    x.onclick = function () {$('stream-prefs-menu-contents').toggleClassName('hidden')}});
   Ajax.Responders.register({
-    onCreate:function() {$('entries-status').update('Ajax通信中...')},
-    onComplete:function() {$('entries-status').update('Ajax通信終了')}
+    onCreate:function() {$('entries-status').innerHTML = 'Ajax通信中...'},
+    onComplete:function() {$('entries-status').innerHTML = 'Ajax通信終了'}
   });
   var e0 = $('view-cards1'),e1 = $('view-list1'),n = 'tab-header-selected';
   e0.onclick = function() {
@@ -502,34 +531,34 @@ function main() {
   $('stream-unsubscribe').onclick = function(){show_sorted_subjects(calc_entry_pace,1)};
   $('stream-rename').onclick = function(){show_sorted_subjects(calc_entry_pace,-1)};
   //parse_bbsmenu();をktkr.htmlのロードのたび走らせるなんて冗談じゃない。
-  $$('ul#sub-tree a.link.bbsmenu').each(function (x) {
+  var bbsmenus = $$('ul#sub-tree a.link.bbsmenu');
+  bbsmenus.each(function(x) {
     Event.observe(x,'click',function(e) {
 		    view_board(x);
 		    //イベント伝播を止めないと親のul.folderのonclickまで動いてしまう
 		    Event.stop(e);
-		    return false})});
+		    return false});
+		});
   $('sub-tree-show-new').onclick = function() {
     scheduler.concat_queues($$('#sub-tree li.folder.collapsed').eachSlice(10).map(function(l) {
       return function(){
-	l.each(function(x) {
-		 x.onclick(x)})}}))};
+	for (var s = 0; s < l.length; s++) l[s].onclick(l[s])}}))};
   $('sub-tree-show-all').onclick = function() {
     scheduler.concat_queues($$('#sub-tree li.folder.expanded').eachSlice(10).map(function(l) {
       return function(){
-	l.each(function(x) {
-		 x.onclick(x)})}}))};
-  $('quick-add-bubble-holder').onclick = function() {
-    $('quick-add-bubble-holder').toggleClassName('hidden');
-  };
+	for (var s = 0; s < l.length; s++) l[s].onclick(l[s])}}))};
+
+  $('quick-add-bubble-holder').onclick = function() {$('quick-add-bubble-holder').toggleClassName('hidden')};
   var query = window.location.search.toQueryParams();
   if (query.board) {
-    var elt_a = $$('ul#sub-tree a.link.bbsmenu').detect(function(x){
-      var re = /board=([^&]+)/;
-      return (x.href.search(re) != -1 && x.href.match(re)[1] == query.board);
-    });
-    if (elt_a) {
-      toggle_nav();
-      view_board(elt_a);
+    var re = /board=([^&]+)/;
+    for (var s = 0; s < bbsmenus.length; s++) {
+      var x = bbsmenus[s];
+      if (x.href.search(re) != -1 && x.href.match(re)[1] == query.board) {
+	toggle_nav();
+	view_board(x);
+	break;
+      };
     };
     if (query.thread) {
       toggle_entries();
@@ -554,11 +583,12 @@ function parse_bbsmenu() {
 	last.boards.push({name: x.innerHTML,href: HTML_URL + '?board=' + x.href});
       };
     });
-  var subtree = $('sub-tree');
+  var subtree = $clear('sub-tree');
+  var frag = document.createDocumentFragment();
   a.each(function(x) {
     var elt = LI({className:'folder unselectable collapsed',onclick:"toggle_folder(this);"},[
 	       A({className:'link'},[
-		 IMG({width:16,height:16,alt:"",src:"tree-view-folder-closed.gif",className:"icon icon-d-1"}),
+		 IMG({width:16,height:16,alt:"",src:"images/tree-view-folder-closed.gif",className:"icon icon-d-1"}),
 		 SPAN({title:x.categoly,className:"name name-d-1 name-unread"},
 		   SPAN({className:"name-text name-text-d-1"},x.categoly))]),
 	       UL(x.boards.map(function(y){
@@ -567,8 +597,9 @@ function parse_bbsmenu() {
 					     SPAN({title:y.name,className:"name name-d-2"},
 					       SPAN({className:"name-text name-text-d-2"},y.name))));
 				   }))]);
-    subtree.appendChild(elt);
+	   frag.appendChild(elt);
   });
+  subtree.appendChild(frag);
 }
 
 window.onload = main;
