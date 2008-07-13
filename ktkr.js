@@ -4,7 +4,7 @@ var CGI_URL = './ktkr.cgi';
 var HTML_URL = './ktkr.html';
 var current_data = [];
 var current_subject = [];
-var id_extract_table = {};
+var at_popup = [];
 
 var Scheduler = Class.create({
   initialize: function () {
@@ -41,20 +41,6 @@ var Scheduler = Class.create({
 });
 var scheduler = new Scheduler();
 
-Array.prototype.filtermap = function(iterator, context) {
-  iterator = iterator ? iterator.bind(context) : Prototype.K;
-  var results = [];
-  var correction = 0
-  this.each(function(value, index) {
-    var v = iterator(value, index - correction);
-    if (v !== false && v !== null)
-      results.push(v);
-    else
-      correction++;
-  });
-  return results;
-};
-
 function parse_dat_and_display(o,h) {
   var head = current_data.length + 1;
   var partitions = 150;
@@ -85,17 +71,10 @@ function parse_dat_and_display(o,h) {
 	var count = head+(i*partitions)+s-correction;
 	var name = "<span class='res-name'>" + a[0].replace(/<\/b>([^<]*)<b>/g,"<b>$1</b>") + "</span>";
 	var mail = a[1];
-	var date = a[2];
-	var id_re = /ID:(.+)/;
-	if (date.search(id_re) != -1) {
-	  var id = date.match(id_re)[1];
-	  if (!id_extract_table[id]) id_extract_table[id] = [];
-	  id_extract_table[id].push(count-1);
-	  date = date.replace(id_re,"<span class='res-id' onclick='id_onclick(this);'>ID:$1</span>");
-	};
+	var date = a[2].replace(/ID:(.+)/,"<span class='res-id' onclick='id_onclick(this);'>ID:$1</span>")
 	var body = a[3].replace(/<a[^>]*>&gt\;&gt\;(\d{1,4})-(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>-<a class="thread-ref" href="#$2" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">$2</a>').replace(/<a[^>]*>&gt\;&gt\;(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>').replace(/(((ht|f|t)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(?:(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?/g,'<a href=$&>$&</a>').replace(/href=ttp/g,'href=http');
 	var dt_dd = [DT(),DD()];
-	dt_dd[0].innerHTML = count + " :"+name+":"+mail+":"+date;
+	dt_dd[0].innerHTML = [count,name,mail,date].join(':');
 	dt_dd[1].innerHTML = body;
 	l.push(dt_dd);
       };
@@ -151,8 +130,7 @@ function show_tree() {
   };
   //それを木に統合する。
   var tree = tree_merge(inversed_arr);
-  //DL、DT、DDタグのツリーにして表示する。見栄えのために1段めだけはツリーをつぶす。
-  for (var s = 0; s < tree.length; s++) tree[s] = (tree[s].length == 1) ? tree[s][0] : tree[s];
+  //DL、DT、DDタグのツリーにして表示する。
   $clear('left-section').appendChild(dl_tree(tree));
 }
 
@@ -162,11 +140,12 @@ function show_tree() {
 function view_thread(elm) {
   var title = $('chrome-stream-title').down(1);
   title.href = elm.href;
-  title.onclick = function() {
+  Event.observe(title,'click',function() {
     if ($(document.body).hasClassName('hide-entries')) toggle_entries();
     return view_thread_diff(elm);
-  };
-  $('thread-reload').onclick = function() {return view_thread_diff(elm)};
+  });
+  Event.observe('thread-reload','click',function() {return view_thread_diff(elm);});
+  close_popup();
   var re = /board=(.*)&thread=(.*)/;
   if (elm.href.search(re) != -1) {
     var info = elm.href.match(re);
@@ -204,11 +183,11 @@ function view_board(elm) {
   var title = $('chrome-stream-title').down(0);
   title.innerHTML = elm.down(1).innerHTML;
   title.href = elm.href;
-  title.onclick = function() {
+  Event.observe(title,'click',function() {
     if ($(document.body).hasClassName('hide-entries')) toggle_entries();
     return view_board(elm)
-  };
-  $('viewer-refresh').onclick = function() {return view_board(elm)};
+  });
+  Event.observe('viewer-refresh','click',function() {return view_board(elm)});
   $('chrome-stream-title').down(1).innerHTML = '';
   var re = /board=(.*)/;
   if (elm.href.search(re) != -1) {
@@ -243,20 +222,8 @@ function subjects(board,responseText) {
 	  var thread_rescount = y[3];
 	  var re_board = /(http:\/\/[^/]+)\/(.*)/;
 	  var board_host_and_path = board.search(re_board) != -1 ? board.match(re_board) : ['null','null','null'];
-	  var elt = DIV({className:'entry'},
-		      DIV({className:'collapsed'},
-		      [DIV({className: 'entry-icons'},
-		       DIV({className:'item-star star link unselectable empty'})),
-		       DIV({className:'entry-date'},'(' + thread_rescount +')'),
-		       DIV({className:'entry-main'},
-		       [A({href:board_host_and_path[1]+"/test/read.cgi/"+board_host_and_path[2]+thread_key,
-  			   target:"_blank",
-			   className:"entry-original"}),
-			DIV({className:'entry-secondary'},
-			A({className:'entry-title',
-			   href:HTML_URL+"?board="+board+"&thread="+thread_key,
-			   onclick:"return view_thread(this);"},
-			   thread_title))])]));
+	  var elt = DIV({className:'entry'});
+	  elt.innerHTML = ['<div class="collapsed"><div class="entry-icons"><div class="item-star star link unselectable empty"></div></div><div class="entry-date">(',thread_rescount,')</div><div class="entry-main"><a class="entry-original" target="_blank" href="',board_host_and_path[1],'/test/read.cgi/',board_host_and_path[2],thread_key,'"/><div class="entry-secondary"><a class="entry-title" onclick="return view_thread(this);" href="',HTML_URL,'?board=',board,'&thread=',thread_key,'">',thread_title,'</a></div></div></div></div>'].join('');
 	  current_subject.push(elt);
 	  frag.appendChild(elt);
 	};
@@ -283,7 +250,8 @@ function show_sorted_subjects(f,asc) {
   var frag = document.createDocumentFragment();
   for (var s = 0; s < arr.length; s++) frag.appendChild(current_subject[arr[s][1]]);
   entries.appendChild(frag);
-  $('stream-prefs-menu-contents').toggleClassName('hidden');
+  var e = $('stream-prefs-menu-contents');
+  if (!e.hasClassName('hidden')) e.addClassName('hidden');
 }
 
 //スレッドのレス数をパースする。
@@ -401,6 +369,7 @@ function $clear(e) {
   return e;
 }
 
+//スクロールしてアンカ先のレスを表示
 function anchor_onclick(elt) {
   var re = /(\d+)$/;
   var href = null;
@@ -415,6 +384,7 @@ function anchor_onclick(elt) {
   return false;
 }
 
+//ポップアップでアンカ先のレスを表示
 function anchor_onhover(elt) {
   var re = /(\d+)$/;
   var href = null;
@@ -422,42 +392,43 @@ function anchor_onhover(elt) {
     var p = parseInt(elt.href.match(re)[1]);
     if (!isNaN(p)) href = p-1;
   };
-
+  var e = $('quick-add-instructions-dl');
   if (href != null && current_data[href]) {
-    $('quick-add-subs').innerHTML = '';
-    //DOM要素のコピーを行う。
-    $clear('quick-add-instructions').appendChild(DL([current_data[href][0].cloneNode(true),
-						     current_data[href][1].cloneNode(true)]));
+    if (at_popup.indexOf(href) == -1) {
+      $('quick-add-subs').innerHTML = 'アンカ先';
+      at_popup.push(href);
+      //DOM要素のコピーを行う。
+      e.appendChild(current_data[href][0].cloneNode(true))
+      e.appendChild(current_data[href][1].cloneNode(true))
+    };
   };
-  var e = $('quick-add-bubble-holder');
-  var pos = $(elt).viewportOffset();
-  //130pxにはなんの根拠もない。
-  pos.left += 130;
-  pos.top -= 130;
-  e.setStyle({left:pos.left + 'px',top:pos.top + 'px'});
+  e = $('quick-add-bubble-holder');
   if (e.hasClassName('hidden')) e.removeClassName('hidden');
 }
 
 //ID抽出。
 function id_onclick(elt) {
-  var re = /ID:(.+)/;
-  var id = null;
-  if (elt.innerHTML && elt.innerHTML.search(re) != -1) id = elt.innerHTML.match(re)[1];
-
-  if (id != null && id_extract_table[id]) {
-    $('quick-add-subs').innerHTML = 'ID抽出結果(' + id_extract_table[id].length +'件)';
-    $clear('quick-add-instructions').appendChild(DL(id_extract_table[id].map(function(x) {
+  var count = 0;
+  var e = $('quick-add-instructions-dl');
+  var list = $$('#left-section span.res-id');
+  for (var s = 0; s < list.length; s++) {
+    if (list[s].innerHTML == elt.innerHTML) {
+      count++;
       //DOM要素のコピーを行う。
-      return [current_data[x][0].cloneNode(true),
-	      current_data[x][1].cloneNode(true)]})));
+      e.appendChild(Element.up(list[s]).cloneNode(true));
+      e.appendChild(Element.next(Element.up(list[s])).cloneNode(true));
+    };
   };
-  var e = $('quick-add-bubble-holder');
-  var pos = $(elt).viewportOffset();
-  //150pxにはなんの根拠もない。
-  pos.left += 150;
-  pos.top -= 150;
-  e.setStyle({left:pos.left + 'px',top:pos.top + 'px'});
+  $('quick-add-subs').innerHTML = 'ID抽出結果(' + count +'件)';
+  e = $('quick-add-bubble-holder');
   if (e.hasClassName('hidden')) e.removeClassName('hidden');
+}
+
+function close_popup() {
+  $('quick-add-instructions-dl').childElements().each(function(x) {Element.hide(x)});
+  at_popup = [];
+  var e = $('quick-add-bubble-holder');
+  if (!e.hasClassName('hidden')) e.addClassName('hidden');
 }
 
 function calcSize() {
@@ -486,71 +457,81 @@ function onresize() {
   var a = $('left-section');
   var b = $('sub-tree');
   var c = $('nav-toggler');
+  var d = $('quick-add-bubble-holder');
+  var d1 = $('quick-add-instructions-dl');
   var w = calcSize();
   var e1 = $('chrome-footer-container'),e2 = $('viewer-box-table'), e3 = $('viewer-header');
   var f1 = $('selectors-box'),f2 = $('add-box');
   if ($(document.body).hasClassName('hide-entries')) {
-    a.style.height = w[0]-e1.offsetHeight-e3.offsetHeight-30;
+    a.style.height = Math.max(w[0]-e1.offsetHeight-e3.offsetHeight-30,0);
   } else {
-    a.style.height = w[0]-e1.offsetHeight-e2.offsetHeight-50;
+    a.style.height = Math.max(w[0]-e1.offsetHeight-e2.offsetHeight-60,0);
   };
-  b.style.height = w[0]-f1.offsetHeight-f2.offsetHeight-50;
+  b.style.height = Math.max(w[0]-f1.offsetHeight-f2.offsetHeight-50,0);
   c.style.height = w[0];
+  var pos = $('viewer-page-container1').viewportOffset();
+  //400px,50px,480px,100pxにはなんの根拠もない。
+  pos.left += 400;
+  pos.top += 50;
+  pos.width = Math.max(a.offsetWidth - 480,0);
+  pos.height = Math.max(a.offsetHeight - 100,0);
+  d.setStyle({left:pos.left + 'px',top:pos.top + 'px'});
+  d1.setStyle({width:pos.width + 'px',height:pos.height + 'px'});
 }
 
 function main() {
   if (Prototype.Browser.IE) $(document.body).addClassName('ie6');
   Builder.dump();
   onresize();
-  $('nav-toggler').onclick=toggle_nav;
-  $('entries-toggler').onclick=toggle_entries;
-  $('stream-prefs-menu').onclick = function () {$('stream-prefs-menu-contents').toggleClassName('hidden')};
+  Event.observe('nav-toggler','click',toggle_nav);
+  Event.observe('entries-toggler','click',toggle_entries);
+  Event.observe('stream-prefs-menu','click',function () {$('stream-prefs-menu-contents').toggleClassName('hidden')});
   $('stream-prefs-menu-contents').childElements().each(function(x) {
-    x.onclick = function () {$('stream-prefs-menu-contents').toggleClassName('hidden')}});
+    Event.observe(x,'click',function (){$('stream-prefs-menu-contents').toggleClassName('hidden')})});
   Ajax.Responders.register({
     onCreate:function() {$('entries-status').innerHTML = 'Ajax通信中...'},
     onComplete:function() {$('entries-status').innerHTML = 'Ajax通信終了'}
   });
   var e0 = $('view-cards1'),e1 = $('view-list1'),n = 'tab-header-selected';
-  e0.onclick = function() {
+  Event.observe(e0,'click',function() {
     if (e1.hasClassName(n)) {
       e1.removeClassName(n);
       e0.addClassName(n);
       $clear('left-section').appendChild(DL(current_data));
     };
-  };
-  e1.onclick = function() {
+  });
+  Event.observe(e1,'click',function() {
     if (e0.hasClassName(n)) {
       e0.removeClassName(n);
       e1.addClassName(n);
       show_tree();
     };
-  };
-  $('order-by-newest').onclick = function(){show_sorted_subjects(parse_entry_rescount,1)};
-  $('order-by-oldest').onclick = function(){show_sorted_subjects(parse_entry_rescount,-1)};
-  $('stream-unsubscribe').onclick = function(){show_sorted_subjects(calc_entry_pace,1)};
-  $('stream-rename').onclick = function(){show_sorted_subjects(calc_entry_pace,-1)};
-  //parse_bbsmenu();をktkr.htmlのロードのたび走らせるなんて冗談じゃない。
-  var bbsmenus = $$('ul#sub-tree a.link.bbsmenu');
-  bbsmenus.each(function(x) {
+  });
+  Event.observe('order-by-newest','click',function(){show_sorted_subjects(parse_entry_rescount,1)});
+  Event.observe('order-by-oldest','click',function(){show_sorted_subjects(parse_entry_rescount,-1)});
+  Event.observe('stream-unsubscribe','click',function(){show_sorted_subjects(calc_entry_pace,1)});
+  Event.observe('stream-rename','click',function(){show_sorted_subjects(calc_entry_pace,-1)});
+  Event.observe('sub-tree-show-new','click',function() {
+    scheduler.concat_queues($$('#sub-tree li.folder.collapsed').eachSlice(10).map(function(l) {
+      return function(){
+	for (var s = 0; s < l.length; s++) l[s].onclick(l[s])}}))});
+  Event.observe('sub-tree-show-all','click',function() {
+    scheduler.concat_queues($$('#sub-tree li.folder.expanded').eachSlice(10).map(function(l) {
+      return function(){
+	for (var s = 0; s < l.length; s++) l[s].onclick(l[s])}}))});
+
+  $$('ul#sub-tree a.link.bbsmenu').each(function (x) {
     Event.observe(x,'click',function(e) {
 		    view_board(x);
 		    //イベント伝播を止めないと親のul.folderのonclickまで動いてしまう
 		    Event.stop(e);
-		    return false});
-		});
-  $('sub-tree-show-new').onclick = function() {
-    scheduler.concat_queues($$('#sub-tree li.folder.collapsed').eachSlice(10).map(function(l) {
-      return function(){
-	for (var s = 0; s < l.length; s++) l[s].onclick(l[s])}}))};
-  $('sub-tree-show-all').onclick = function() {
-    scheduler.concat_queues($$('#sub-tree li.folder.expanded').eachSlice(10).map(function(l) {
-      return function(){
-	for (var s = 0; s < l.length; s++) l[s].onclick(l[s])}}))};
+		    return false})});
 
-  $('quick-add-bubble-holder').onclick = function() {$('quick-add-bubble-holder').toggleClassName('hidden')};
+  Event.observe('quick-add-bubble-holder','click',close_popup);
+
   var query = window.location.search.toQueryParams();
   if (query.board) {
+    var bbsmenus = $$('ul#sub-tree a.link.bbsmenu');
     var re = /board=([^&]+)/;
     for (var s = 0; s < bbsmenus.length; s++) {
       var x = bbsmenus[s];
@@ -565,6 +546,7 @@ function main() {
       view_thread(A({href:Object.toQueryString(query)}));
     };
   };
+
 }
 
 //bbsmenu.htmlを解析する関数。とても重い。
@@ -602,5 +584,5 @@ function parse_bbsmenu() {
   subtree.appendChild(frag);
 }
 
-window.onload = main;
-window.onresize = onresize;
+Event.observe(window,'load',main);
+Event.observe(window,'resize',onresize);

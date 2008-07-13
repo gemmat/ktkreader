@@ -626,8 +626,7 @@ input{
   color:#000;
   z-index:50;
   margin:2px 0;
-  position:absolute;
-  overflow:auto
+  position:absolute
 }
 #quick-add-bubble-holder .s{
   background-color:#6bc290
@@ -3161,7 +3160,7 @@ body{
   width:auto;
   overflow:hidden;
   display:block;
-  /* modified for IE(i dont know why this works.) position:absolute; */
+  /* modified for IE(I dont know why this works.) position:absolute; */
   top:1px;
   left:0
 }
@@ -3538,7 +3537,7 @@ body{
   background-repeat:no-repeat;
   background-position:top left;
   /* modified padding:3px 0 0 3px */
-  padding:3px;
+  padding:3px
 }
 #viewer-box-inner{
   width:100%;
@@ -3818,9 +3817,9 @@ body{
 }
 /* modified */
 #left-section{overflow-y:auto}
-#viewer-page-container1{margin-top:1em;}
+#viewer-page-container1{margin-top:1em}
 #viewer-header1{z-index:1;position:relative;right:20;top:0;zoom:1;background-color:#C3D9FF}
-#viewer-controls1{position:absolute;right:0;top:0;}
+#viewer-controls1{position:absolute;right:0;top:0}
 #entries-toggler{
   height:6px;
   border:0;
@@ -3837,16 +3836,14 @@ body{
   height:14px;
   background-image:url("arrow-down.gif")
 }
-
 .hide-entries #viewer-box{
-  display: none;
+  display: none
 }
-
-#bbsmenu_data{ display: none; }
-#stream-prefs-menu-contents{ z-index:2; }
-span.res-name{ color: green; font-weight:bold; }
-#left-section dd { margin:0.5em 0pt 0.7em 2em; }
-
+#bbsmenu_data{display: none}
+#stream-prefs-menu-contents{z-index:2}
+span.res-name{color: green; font-weight:bold}
+#left-section dd {margin:0.5em 0pt 0.7em 2em}
+#quick-add-instructions-dl{overflow:auto}
 @media print{
   body{
     background:none
