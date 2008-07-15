@@ -69,12 +69,12 @@ function parse_dat_and_display(o,h) {
 	  $('chrome-stream-title').down(1).innerHTML = a[4];
 	};
 	var count = head+(i*partitions)+s-correction;
-	var name = "<span class='res-name'>" + a[0].replace(/<\/b>([^<]*)<b>/g,"<b>$1</b>") + "</span>";
+	var name = ["<span class='res-name'>",a[0].replace(/<\/b>([^<]*)<b>/g,"<b>$1</b>"),"</span>"].join('');
 	var mail = a[1];
 	var date = a[2].replace(/ID:(.+)/,"<span class='res-id' onclick='id_onclick(this);'>ID:$1</span>")
 	var body = a[3].replace(/<a[^>]*>&gt\;&gt\;(\d{1,4})-(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>-<a class="thread-ref" href="#$2" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">$2</a>').replace(/<a[^>]*>&gt\;&gt\;(\d{1,4})<\/a>/g,'<a class="thread-ref" href="#$1" onclick="return anchor_onclick(this);" onmouseover="anchor_onhover(this);">&gt\;&gt\;$1</a>').replace(/(((ht|f|t)tp(s?))\:\/\/)?((([a-zA-Z0-9_\-]{2,}\.)+[a-zA-Z]{2,})|((?:(?:25[0-5]|2[0-4]\d|[01]\d\d|\d?\d)(?:(\.?\d)\.)){4}))(:[a-zA-Z0-9]+)?(\/[a-zA-Z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~]*)?/g,'<a href=$&>$&</a>').replace(/href=ttp/g,'href=http');
-	var dt_dd = [DT(),DD()];
-	dt_dd[0].innerHTML = [count,name,mail,date].join(':');
+	var dt_dd = [DT(),DD({className:'rr'})];
+	dt_dd[0].innerHTML = [count+' ',name,date].join(':');
 	dt_dd[1].innerHTML = body;
 	l.push(dt_dd);
       };
@@ -92,6 +92,9 @@ function parse_dat_and_display(o,h) {
     $('entries-status').innerHTML = '完了';
     if ($('view-list1').hasClassName('tab-header-selected')) {
       show_tree();
+    };
+    if ($('view-matome').hasClassName('tab-header-selected')) {
+      show_matome();
     };
   });
 }
@@ -223,7 +226,7 @@ function subjects(board,responseText) {
 	  var re_board = /(http:\/\/[^/]+)\/(.*)/;
 	  var board_host_and_path = board.search(re_board) != -1 ? board.match(re_board) : ['null','null','null'];
 	  var elt = DIV({className:'entry'});
-	  elt.innerHTML = ['<div class="collapsed"><div class="entry-icons"><div class="item-star star link unselectable empty"></div></div><div class="entry-date">(',thread_rescount,')</div><div class="entry-main"><a class="entry-original" target="_blank" href="',board_host_and_path[1],'/test/read.cgi/',board_host_and_path[2],thread_key,'"/><div class="entry-secondary"><a class="entry-title" onclick="return view_thread(this);" href="',HTML_URL,'?board=',board,'&thread=',thread_key,'">',thread_title,'</a></div></div></div></div>'].join('');
+	  elt.innerHTML = ['<div class="collapsed"><div class="entry-icons"><div class="item-star star link unselectable empty"></div></div><div class="entry-date">(',thread_rescount,')</div><div class="entry-main"><a class="entry-rss" target="_blank" href="http://2ch2rss.dip.jp/rss.xml?url=',encodeURI(board_host_and_path[1]+'/test/read.cgi/'+board_host_and_path[2]+thread_key),'"/><a class="entry-qrcode" target="_blank" href="http://chart.apis.google.com/chart?cht=qr&chs=150x150&choe=Shift_JIS&chl=',encodeURI('http://c.2ch.net/test/-/'+board_host_and_path[2]+thread_key+'/i'),'"/><a class="entry-original" target="_blank" href="',board_host_and_path[1],'/test/read.cgi/',board_host_and_path[2],thread_key,'"/><div class="entry-secondary"><a class="entry-title" onclick="return view_thread(this);" href="',HTML_URL,'?board=',board,'&thread=',thread_key,'">',thread_title,'</a></div></div></div></div>'].join('');
 	  current_subject.push(elt);
 	  frag.appendChild(elt);
 	};
@@ -419,7 +422,7 @@ function id_onclick(elt) {
       e.appendChild(Element.next(Element.up(list[s])).cloneNode(true));
     };
   };
-  $('quick-add-subs').innerHTML = 'ID抽出結果(' + count +'件)';
+  $('quick-add-subs').innerHTML = elt.innerHTML + ' 抽出結果(' + count +'件)';
   e = $('quick-add-bubble-holder');
   if (e.hasClassName('hidden')) e.removeClassName('hidden');
 }
@@ -492,7 +495,7 @@ function main() {
     onCreate:function() {$('entries-status').innerHTML = 'Ajax通信中...'},
     onComplete:function() {$('entries-status').innerHTML = 'Ajax通信終了'}
   });
-  var e0 = $('view-cards1'),e1 = $('view-list1'),n = 'tab-header-selected';
+  var e0 = $('view-cards1'),e1 = $('view-list1'),e2 = $('view-matome'),n = 'tab-header-selected';
   Event.observe(e0,'click',function() {
     if (e1.hasClassName(n)) {
       e1.removeClassName(n);
@@ -505,6 +508,24 @@ function main() {
       e0.removeClassName(n);
       e1.addClassName(n);
       show_tree();
+    };
+  });
+  Event.observe(e2,'click',function() {
+    e2.toggleClassName(n);
+    if (e2.hasClassName(n)) {
+      show_matome();
+    } else {
+      $$('#left-section .matome').each(function(x) {Element.remove(x)});
+      $$('#left-section .res-delete').each(function(x) {x.removeClassName('res-delete')});
+      $$('#left-section dd').each(function(dd) {
+				    if (dd.hasClassName('rr')) dd.removeClassName('rr');
+				    if (dd.hasClassName('r1')) dd.removeClassName('r1');
+				    if (dd.hasClassName('r2')) dd.removeClassName('r2');
+				    if (dd.hasClassName('r3')) dd.removeClassName('r3');
+				    if (dd.hasClassName('r4')) dd.removeClassName('r4');
+				    if (dd.hasClassName('aa')) dd.removeClassName('aa');
+				    dd.addClassName('rr');
+				  });
     };
   });
   Event.observe('order-by-newest','click',function(){show_sorted_subjects(parse_entry_rescount,1)});
@@ -547,6 +568,53 @@ function main() {
     };
   };
 
+}
+
+function show_matome() {
+  $('left-section').insertBefore(BUTTON({className:'matome',onclick:'matome_preview();'},'プレビュー'),$('left-section').down());
+  $('left-section').appendChild(BUTTON({className:'matome',onclick:'matome_preview();'},'プレビュー'));
+  $$('#left-section dt').each(function(x){
+				var s = SPAN({className:'matome'});
+				s.innerHTML = '<button onclick="res_toggle(this)">削除</button><button onclick="font_change(this,\'rr\')">黒</button><button onclick="font_change(this,\'r1\')\">赤</button><button onclick="font_change(this,\'r2\')">青</button><button onclick=\"font_change(this,\'r3\')\">赤小</button><button onclick="font_change(this,\'r4\')">青小</button><button onclick=\"font_change(this,\'aa\')">AA</button>';
+				x.appendChild(s);
+			      });
+}
+
+function matome_preview() {
+  var title =  $('chrome-stream-title').down(1);
+  var str = ['<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><style type=text/css>',
+	     '.rr {color:#000000;font-size:1.0em;}',
+	     '.r1 {color:#ff0000;font-size:1.2em;font-weight:bold;line-height:110%;}',
+	     '.r2 {color:#0000ff;font-size:1.2em;font-weight:bold;line-height:110%;}',
+	     '.r3 {color:#ff0000;font-size:1.1em;font-weight:bold;line-height:1.4;}',
+	     '.r4 {color:#0000ff;font-size:1.1em;font-weight:bold;line-height:1.4;}',
+	     '.aa {color:#000000;font-family:"Mona","mona-gothic-jisx0208.1990-0","ＭＳ Ｐゴシック";font-size:12px;font-size-adjust:none;font-style:normal;font-variant:normal;font-weight:normal;line-height:1em;}',
+	     '</style></head><body>',
+	     '<h2><a href="'+title.href+'">'+title.innerHTML+'</a></h2>',
+	     $('left-section').innerHTML.replace(/<dt[^>]*res-delete[^>]*>(?:.(?!\/dt))+<\/dt>/g,'').replace(/<dd[^>]*res-delete[^>]*>(?:.(?!\/dd))+<\/dd>/g,'').replace(/<button[^>]*>[^<]*<\/button>/g,'').replace(/<span class="res-name">([^<]*)<\/span>/g,'<font color="green">$1</font>').replace(/<span[^>]*>([^<]*)<\/span>/g,'$1').replace(/<a class="thread-ref" href="#\d{1,4}" onclick="return anchor_onclick\(this\);" onmouseover="anchor_onhover\(this\);">&gt\;&gt\;(\d{1,4})<\/a>-<a class="thread-ref" href="#\d{1,4}" onclick="return anchor_onclick\(this\);" onmouseover="anchor_onhover\(this\);">(\d{1,4})<\/a>/g,'<a href=\"#$1-$2\'>&gt\;&gt\;$1-$2</a>').replace(/<a class="thread-ref" href="#\d{1,4}" onclick="return anchor_onclick\(this\);" onmouseover="anchor_onhover\(this\);">&gt\;&gt\;(\d{1,4})<\/a>/g,'<a href="#$1">&gt\;&gt\;$1</a>').replace(/<dt>/g,'\n<dt>'),
+	     '</body></html>'].join('\n');
+  var win_doc = window.open('', '', 'menubar=yes,resizable=yes,scrollbars=yes,status=yes').document;
+  win_doc.open();
+  win_doc.write(str);
+  win_doc.close();
+}
+
+function res_toggle(elt){
+  var dt = Element.up(elt,1);
+  var dd = Element.next(Element.up(elt,1));
+  Element.toggleClassName(dt,'res-delete');
+  Element.toggleClassName(dd,'res-delete');
+}
+
+function font_change(elt,font) {
+  var dd = Element.next(Element.up(elt,1));
+  if (dd.hasClassName('rr')) dd.removeClassName('rr');
+  if (dd.hasClassName('r1')) dd.removeClassName('r1');
+  if (dd.hasClassName('r2')) dd.removeClassName('r2');
+  if (dd.hasClassName('r3')) dd.removeClassName('r3');
+  if (dd.hasClassName('r4')) dd.removeClassName('r4');
+  if (dd.hasClassName('aa')) dd.removeClassName('aa');
+  dd.addClassName(font);
 }
 
 //bbsmenu.htmlを解析する関数。とても重い。

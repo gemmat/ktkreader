@@ -3271,7 +3271,8 @@ body{
   margin:0;
   padding:0;
   width:auto;
-  margin-right:2.3em
+  /*modified margin-right:2.3em */
+  margin-right:6.0em
 }
 #entries.list .collapsed .entry-secondary .snippet{
   white-space:inherit;
@@ -3608,7 +3609,7 @@ body{
   zoom:1
 }
 #chrome-footer-container .button-container{
-  margin-right:1em
+  /* modified margin-right:1em */
 }
 #chrome.item-stream #chrome-footer-container{
   display:none
@@ -3842,8 +3843,106 @@ body{
 #bbsmenu_data{display: none}
 #stream-prefs-menu-contents{z-index:2}
 span.res-name{color: green; font-weight:bold}
+span.res-id{cursor: pointer}
 #left-section dd {margin:0.5em 0pt 0.7em 2em}
 #quick-add-instructions-dl{overflow:auto}
+#chrome.search-stream .search-result .entry-original,#entries .collapsed .entry-qrcode{
+  width:14px;
+  height:14px;
+  background-image:url("qrcode-small.gif");
+  background-repeat:no-repeat;
+  position:absolute;
+  right:0.2em;
+  top:50%;
+  margin-top:-7px
+}
+#entries.list .collapsed .entry-main .entry-qrcode{
+  white-space:normal;
+  display:inline;
+  float:none;
+  margin:0;
+  padding:0;
+  width:auto;
+  position:absolute;
+  top:1px;
+  right:2.0em;
+  width:1.2em;
+  z-index:2
+}
+#chrome.search-stream .search-result .entry-original,#entries .collapsed .entry-rss{
+  width:14px;
+  height:14px;
+  background-image:url("rss-small.gif");
+  background-repeat:no-repeat;
+  position:absolute;
+  right:0.2em;
+  top:50%;
+  margin-top:-7px
+}
+#entries.list .collapsed .entry-main .entry-rss{
+  white-space:normal;
+  display:inline;
+  float:none;
+  margin:0;
+  padding:0;
+  width:auto;
+  position:absolute;
+  top:1px;
+  right:3.6em;
+  width:1.2em;
+  z-index:2
+}
+
+/* matome */
+#left-section dt.res-delete { 
+  opacity:.3;
+  moz-opacity:0.3;
+  filter:progid:DXImageTransform.Microsoft.Alpha(opacity=30)
+}
+#left-section dd.res-delete {
+  opacity:.3;
+  moz-opacity:0.3;
+  filter:progid:DXImageTransform.Microsoft.Alpha(opacity=30)
+}
+#left-section dd.rr {
+  color:#000000;
+  font-size:1.0em;
+}
+#left-section dd.r1 {
+  color:#ff0000;
+  font-size:1.2em;
+  font-weight:bold;
+  line-height:110%;
+}
+#left-section dd.r2 {
+  color:#0000ff;
+  font-size:1.2em;
+  font-weight:bold;
+  line-height:110%;
+}
+#left-section dd.r3 {
+  color:#ff0000;
+  font-size:1.1em;
+  font-weight:bold;
+  line-height:1.4;
+}
+#left-section dd.r4 {
+  color:#0000ff;
+  font-size:1.1em;
+  font-weight:bold;
+  line-height:1.4;
+}
+#left-section dd.aa {
+  color:#000000;
+  font-family:"Mona","mona-gothic-jisx0208.1990-0","ＭＳ Ｐゴシック";
+  font-size:12px;
+  font-size-adjust:none;
+  font-style:normal;
+  font-variant:normal;
+  font-weight:normal;
+  line-height:1em;
+}
+
 @media print{
   body{
     background:none
