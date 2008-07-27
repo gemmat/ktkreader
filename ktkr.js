@@ -41,6 +41,11 @@ var Scheduler = Class.create({
 });
 var scheduler = new Scheduler();
 
+function freshObserve(element,eventName,handler){
+  Event.stopObserving(element,eventName);
+  return Event.observe(element,eventName,handler);
+}
+
 function parse_dat_and_display(o,h) {
   var head = current_data.length + 1;
   var partitions = 150;
@@ -143,21 +148,22 @@ function show_tree() {
 function view_thread(elm) {
   var title = $('chrome-stream-title').down(1);
   title.href = elm.href;
-  Event.observe(title,'click',function() {
+  freshObserve(title,'click',function(e) {
     if ($(document.body).hasClassName('hide-entries')) toggle_entries();
+    Event.stop(e);
     return view_thread_diff(elm);
   });
-  Event.observe('thread-reload','click',function() {return view_thread_diff(elm);});
+  freshObserve('thread-reload','click',function() {return view_thread_diff(elm);});
   close_popup();
+  if ($(document.body).hasClassName('expand-entries')) toggle_entries_expand();
   var re = /board=(.*)&thread=(.*)/;
   if (elm.href.search(re) != -1) {
     var info = elm.href.match(re);
     new Ajax.Request(CGI_URL,{
       parameters: {board:info[1],thread:info[2]},
       onComplete: function(o,h) {
-	scheduler.push_queue(function() {
-			       current_data = [];
-			       $clear('left-section').appendChild(DL())});
+	current_data = [];
+	$clear('left-section').appendChild(DL());
 	parse_dat_and_display(o,h);
       }
     });
@@ -186,11 +192,12 @@ function view_board(elm) {
   var title = $('chrome-stream-title').down(0);
   title.innerHTML = elm.down(1).innerHTML;
   title.href = elm.href;
-  Event.observe(title,'click',function() {
+  freshObserve(title,'click',function(e) {
     if ($(document.body).hasClassName('hide-entries')) toggle_entries();
-    return view_board(elm)
+    Event.stop(e);
+    return view_board(elm);
   });
-  Event.observe('viewer-refresh','click',function() {return view_board(elm)});
+  freshObserve('viewer-refresh','click',function() {return view_board(elm)});
   $('chrome-stream-title').down(1).innerHTML = '';
   var re = /board=(.*)/;
   if (elm.href.search(re) != -1) {
@@ -343,16 +350,18 @@ function tree_merge(relations) {
 
 function toggle_nav() {
   $(document.body).toggleClassName('hide-nav');
-  if ($(document.body).hasClassName('hide-nav')) {
-    $('chrome').setStyle({marginLeft: '15px'});
-  } else {
-    $('chrome').setStyle({marginLeft: '282px'});
-  }
   onresize();
 }
 
 function toggle_entries() {
   $(document.body).toggleClassName('hide-entries');
+  onresize();
+}
+
+function toggle_entries_expand() {
+  if ($(document.body).hasClassName('hide-entries'))
+    $(document.body).removeClassName('hide-entries');
+  $(document.body).toggleClassName('expand-entries');
   onresize();
 }
 
@@ -465,10 +474,21 @@ function onresize() {
   var w = calcSize();
   var e1 = $('chrome-footer-container'),e2 = $('viewer-box-table'), e3 = $('viewer-header');
   var f1 = $('selectors-box'),f2 = $('add-box');
-  if ($(document.body).hasClassName('hide-entries')) {
+  var body = $(document.body);
+  if (body.hasClassName('hide-nav')) {
+    $('chrome').setStyle({marginLeft: '15px'});
+  } else {
+    $('chrome').setStyle({marginLeft: '282px'});
+  }
+  if (body.hasClassName('expand-entries')) {
+    $('entries').style.height = Math.max(w[0]-80,0);
+  } else {
+    $('entries').style.height = '9em';
+  };
+  if (body.hasClassName('hide-entries')) {
     a.style.height = Math.max(w[0]-e1.offsetHeight-e3.offsetHeight-30,0);
   } else {
-    a.style.height = Math.max(w[0]-e1.offsetHeight-e2.offsetHeight-60,0);
+    a.style.height = Math.max(w[0]-e1.offsetHeight-e2.offsetHeight-84,0);
   };
   b.style.height = Math.max(w[0]-f1.offsetHeight-f2.offsetHeight-50,0);
   c.style.height = w[0];
@@ -482,12 +502,81 @@ function onresize() {
   d1.setStyle({width:pos.width + 'px',height:pos.height + 'px'});
 }
 
+function add_bookmark(e) {
+  var href = $('chrome-stream-title').down(1).href;
+  var title = $('chrome-stream-title').down(1).innerHTML;
+  var params = href.toQueryParams();
+  if (params.board && params.thread) {
+    var value = Object.toQueryString({href: href, title: title});
+    var count = save2local.loadData('count') || 0;
+    save2local.saveData(count,value);
+    save2local.saveData('count',count + 1);
+    display_bookmark();
+  };
+}
+
+function delete_bookmark(e) {
+  var re = /^bookmark(\d+)/;
+  if (e.id.search(re) != -1) {
+    var key = e.id.match(re)[1];
+    save2local.saveData(key,'');
+    display_bookmark();
+  };
+}
+
+function display_bookmark() {
+  var bookmark_count = save2local.loadData('count') || 0;
+  var elt = $clear('bookmark-list')
+  for (var s = 0; s < bookmark_count; s++) {
+    var bookmark_value = save2local.loadData(s) || 'null';
+    if (bookmark_value != 'null') {
+      var params = bookmark_value.toQueryParams();
+      elt.appendChild(LI({className:"sub unselectable collapsed unread"},
+			 [A({id:'bookmark'+s,className:'link bookmark-delete'},
+			    IMG({alt:"",src:"images/icon-unsubscribe.gif",className:"icon icon-d-1", height:"16",width:"16"})),
+			  A({href:params.href,className:'link bookmark'},
+			   SPAN({title:params.title,className:"name name-d-2"},
+				SPAN({className:"name-text name-text-d-2"},params.title)))]));
+    };
+  };
+  $$('ul#sub-tree a.link.bookmark-delete').each(function (x) {
+    Event.observe(x,'click',function(e) {
+		    delete_bookmark(x);
+		    //イベント伝播を止めないと親のul.folderのonclickまで動いてしまう
+		    Event.stop(e);
+		    return false})});
+  $$('ul#sub-tree a.link.bookmark').each(function (x) {
+    Event.observe(x,'click',function(e) {
+		    if (x.href) auto_pilot(x.href.toQueryParams());
+		    //イベント伝播を止めないと親のul.folderのonclickまで動いてしまう
+		    Event.stop(e);
+		    return false})});
+}
+
+function auto_pilot(params) {
+  if (params.board) {
+    var bbsmenus = $$('ul#sub-tree a.link.bbsmenu');
+    var re = /board=([^&]+)$/;
+    for (var s = 0; s < bbsmenus.length; s++) {
+      var x = bbsmenus[s];
+      if (x.href.search(re) != -1 && x.href.match(re)[1] == params.board) {
+	view_board(x);
+	break;
+      };
+    };
+    if (params.thread) {
+      view_thread(A({href:Object.toQueryString(params)}));
+    };
+  };
+}
+
 function main() {
   if (Prototype.Browser.IE) $(document.body).addClassName('ie6');
   Builder.dump();
   onresize();
   Event.observe('nav-toggler','click',toggle_nav);
   Event.observe('entries-toggler','click',toggle_entries);
+  Event.observe('entries-toggler2','click',toggle_entries_expand);
   Event.observe('stream-prefs-menu','click',function () {$('stream-prefs-menu-contents').toggleClassName('hidden')});
   $('stream-prefs-menu-contents').childElements().each(function(x) {
     Event.observe(x,'click',function (){$('stream-prefs-menu-contents').toggleClassName('hidden')})});
@@ -501,6 +590,10 @@ function main() {
       e1.removeClassName(n);
       e0.addClassName(n);
       $clear('left-section').appendChild(DL(current_data));
+      if (e2.hasClassName(n)) {
+	$('left-section').insertBefore(BUTTON({className:'matome',onclick:'matome_preview();'},'プレビュー'),$('left-section').down());
+	$('left-section').appendChild(BUTTON({className:'matome',onclick:'matome_preview();'},'プレビュー'));
+      };
     };
   });
   Event.observe(e1,'click',function() {
@@ -508,6 +601,10 @@ function main() {
       e0.removeClassName(n);
       e1.addClassName(n);
       show_tree();
+      if (e2.hasClassName(n)) {
+	$('left-section').insertBefore(BUTTON({className:'matome',onclick:'matome_preview();'},'プレビュー'),$('left-section').down());
+	$('left-section').appendChild(BUTTON({className:'matome',onclick:'matome_preview();'},'プレビュー'));
+      };
     };
   });
   Event.observe(e2,'click',function() {
@@ -541,36 +638,20 @@ function main() {
       return function(){
 	for (var s = 0; s < l.length; s++) l[s].onclick(l[s])}}))});
 
+  Event.observe('quick-add-bubble-holder','click',close_popup);
+  Event.observe('add-subs','click',add_bookmark);
   $$('ul#sub-tree a.link.bbsmenu').each(function (x) {
     Event.observe(x,'click',function(e) {
 		    view_board(x);
 		    //イベント伝播を止めないと親のul.folderのonclickまで動いてしまう
 		    Event.stop(e);
 		    return false})});
-
-  Event.observe('quick-add-bubble-holder','click',close_popup);
-
-  var query = window.location.search.toQueryParams();
-  if (query.board) {
-    var bbsmenus = $$('ul#sub-tree a.link.bbsmenu');
-    var re = /board=([^&]+)/;
-    for (var s = 0; s < bbsmenus.length; s++) {
-      var x = bbsmenus[s];
-      if (x.href.search(re) != -1 && x.href.match(re)[1] == query.board) {
-	toggle_nav();
-	view_board(x);
-	break;
-      };
-    };
-    if (query.thread) {
-      toggle_entries();
-      view_thread(A({href:Object.toQueryString(query)}));
-    };
-  };
-
+  display_bookmark();
+  auto_pilot(window.location.search.toQueryParams());
 }
 
 function show_matome() {
+  $$('.matome').each(function(x){Element.remove(x)});
   $('left-section').insertBefore(BUTTON({className:'matome',onclick:'matome_preview();'},'プレビュー'),$('left-section').down());
   $('left-section').appendChild(BUTTON({className:'matome',onclick:'matome_preview();'},'プレビュー'));
   $$('#left-section dt').each(function(x){
@@ -582,7 +663,32 @@ function show_matome() {
 
 function matome_preview() {
   var title =  $('chrome-stream-title').down(1);
-  var str = ['<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><style type=text/css>',
+  var copy = $('left-section').cloneNode(true);
+  Element.select(copy,'.res-delete').each(function(x){Element.remove(x)});
+  Element.select(copy,'.matome').each(function(x){Element.remove(x)});
+  Element.select(copy,'span.res-name').each(function(x) {
+					      var dd = Element.up(x);
+					      var elt = FONT({color:'green'});
+					      elt.innerHTML = x.innerHTML;
+					      dd.insertBefore(elt,x);
+					      Element.remove(x);
+					    });
+  Element.select(copy,'span.res-id').each(function(x) {
+					      var dd = Element.up(x);
+					      var elt = document.createTextNode(x.innerHTML);
+					      dd.insertBefore(elt,x);
+					      Element.remove(x);
+					    });
+  Element.select(copy,'a.thread-ref').each(function(x) {
+					     var dd = Element.up(x);
+					     var elt = A({href:x.href});
+					     elt.innerHTML = x.innerHTML;
+					     dd.insertBefore(elt,x);
+					     Element.remove(x);
+					   });
+  var str = ['<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">',
+	     '<title>'+title.innerHTML+'</title>',
+	     '<style type=text/css>',
 	     '.rr {color:#000000;font-size:1.0em;}',
 	     '.r1 {color:#ff0000;font-size:1.2em;font-weight:bold;line-height:110%;}',
 	     '.r2 {color:#0000ff;font-size:1.2em;font-weight:bold;line-height:110%;}',
@@ -590,8 +696,8 @@ function matome_preview() {
 	     '.r4 {color:#0000ff;font-size:1.1em;font-weight:bold;line-height:1.4;}',
 	     '.aa {color:#000000;font-family:"Mona","mona-gothic-jisx0208.1990-0","ＭＳ Ｐゴシック";font-size:12px;font-size-adjust:none;font-style:normal;font-variant:normal;font-weight:normal;line-height:1em;}',
 	     '</style></head><body>',
-	     '<h2><a href="'+title.href+'">'+title.innerHTML+'</a></h2>',
-	     $('left-section').innerHTML.replace(/<dt[^>]*res-delete[^>]*>(?:.(?!\/dt))+<\/dt>/g,'').replace(/<dd[^>]*res-delete[^>]*>(?:.(?!\/dd))+<\/dd>/g,'').replace(/<button[^>]*>[^<]*<\/button>/g,'').replace(/<span class="res-name">([^<]*)<\/span>/g,'<font color="green">$1</font>').replace(/<span[^>]*>([^<]*)<\/span>/g,'$1').replace(/<a class="thread-ref" href="#\d{1,4}" onclick="return anchor_onclick\(this\);" onmouseover="anchor_onhover\(this\);">&gt\;&gt\;(\d{1,4})<\/a>-<a class="thread-ref" href="#\d{1,4}" onclick="return anchor_onclick\(this\);" onmouseover="anchor_onhover\(this\);">(\d{1,4})<\/a>/g,'<a href=\"#$1-$2\'>&gt\;&gt\;$1-$2</a>').replace(/<a class="thread-ref" href="#\d{1,4}" onclick="return anchor_onclick\(this\);" onmouseover="anchor_onhover\(this\);">&gt\;&gt\;(\d{1,4})<\/a>/g,'<a href="#$1">&gt\;&gt\;$1</a>').replace(/<dt>/g,'\n<dt>'),
+	     '<h1>'+title.innerHTML+'</h1>',
+	     copy.innerHTML.replace(/ _counted="undefined"/g,'').replace(/<(DT|dt)/g,'\n<$1').replace(/<(DL|dl)/g,'\n<$1'),
 	     '</body></html>'].join('\n');
   var win_doc = window.open('', '', 'menubar=yes,resizable=yes,scrollbars=yes,status=yes').document;
   win_doc.open();

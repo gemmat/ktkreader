@@ -656,7 +656,9 @@ input{
   background-position:0 3px
 }
 #add-box #add-subs{
-  float:left
+  float:left;
+  /* modified */
+  font-size:110%
 }
 #quick-add-helptext,#quick-add-instructions{
   clear:both;
@@ -695,7 +697,7 @@ input{
   background:#fff url("arrow-left.gif") no-repeat center center;
   margin:1em 3px 0 1px
 }
-#nav-toggler.hover{
+#nav-toggler:hover{
   background-color:#f3f3f3
 }
 .hide-nav #nav-toggler{
@@ -3829,7 +3831,7 @@ body{
   background:#fff url("arrow-up.gif") no-repeat center center;
   margin:1em 3px 0 1px
 }
-#entries-toggler.hover{
+#entries-toggler:hover{
   background-color:#f3f3f3
 }
 .hide-entries #entries-toggler{
@@ -3837,6 +3839,35 @@ body{
   height:14px;
   background-image:url("arrow-down.gif")
 }
+.expand-entries #entries-toggler{
+  display:none
+}
+.expand-entries #chrome-footer-container{ 
+  display:none
+}
+.expand-entries #viewer-page-container1{ 
+  display:none
+}
+#entries-toggler2{
+  height:6px;
+  border:0;
+  border-right:1px dotted #fff;
+  cursor:pointer;
+  background:#fff url("arrow-down.gif") no-repeat center center;
+  margin:10px 3px 0 1px
+}
+#entries-toggler2:hover{
+  background-color:#f3f3f3
+}
+.hide-entries #entries-toggler2{
+  display:none
+}
+.expand-entries #entries-toggler2{
+  margin:0;
+  height:14px;
+  background-image:url("arrow-up.gif")
+}
+
 .hide-entries #viewer-box{
   display: none
 }
@@ -3895,14 +3926,16 @@ span.res-id{cursor: pointer}
 
 /* matome */
 #left-section dt.res-delete { 
-  opacity:.3;
+  filter:alpha(opacity=30);
+  opacity:0.3;
   moz-opacity:0.3;
-  filter:progid:DXImageTransform.Microsoft.Alpha(opacity=30)
+  zoom:1
 }
 #left-section dd.res-delete {
-  opacity:.3;
+  filter:alpha(opacity=30);
+  opacity:0.3;
   moz-opacity:0.3;
-  filter:progid:DXImageTransform.Microsoft.Alpha(opacity=30)
+  zoom:1
 }
 #left-section dd.rr {
   color:#000000;

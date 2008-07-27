@@ -2,12 +2,13 @@
   <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"></meta>
     <title>ktkrリーダー</title>
+    <link type="text/css" rel="stylesheet" href="./images/ktkr.css"></link>
     <script src="./lib/prototype.js" type="text/javascript"></script>
     <script src="./lib/builder.js" type="text/javascript"></script>
     <script src="./lib/ktkr.js" type="text/javascript"></script>
-    <link type="text/css" rel="stylesheet" href="./images/ktkr.css"></link>
   </head>
   <body>
+    <script src="./lib/swfobject.js" type="text/javascript"></script>
     <div id="main">
       <div id="nav">
 	<table cellspacing="0" cellpadding="0" border="0" id="selectors-box" class="round-box nav-roster-collapsed">
@@ -25,9 +26,6 @@
 		    <li class="selector" id="trends-selector">
 		      <a class="link" href="http://d.hatena.ne.jp/Gemma/">
 			<span class="text">Gemmaの日記</span></a></li>
-		    <li class="selector" id="broadcast-selector">
-		      <a class="link" href="">
-			<span class="text">未定</span></a></li>
 		  </ul>
 		</div>
 	      </td>
@@ -40,8 +38,9 @@
 	      <td class="c">
 		<div id="add-box">
 		  <div id="add-directory">
-		    <a class="link" href="">未定 »</a></div>
-		  <span id="add-subs" class="link">未定</span>
+		    <a class="link" href=""></a>
+		  </div>
+		  <span id="add-subs" class="link">スレをブックマーク</span>
 		</div>
 	      </td>
 	    </tr>
@@ -57,6 +56,16 @@
 		      <span id="sub-tree-show-new" class="link">開く</span> -
 		      <span id="sub-tree-show-all" class="link">閉じる</span></div>
 		    <ul class="scroll-tree" id="sub-tree">
+<li class="folder unselectable collapsed" onclick="toggle_folder(this);">
+  <a class="link">
+    <img alt="" src="images/tree-view-folder-closed.gif" class="icon icon-d-1" height="16" width="16">
+    <span title="ブックマーク" class="name name-d-1 name-unread">
+      <span class="name-text name-text-d-1">ブックマーク</span>
+    </span>
+  </a>
+  <ul id="bookmark-list"></ul>
+</li>
+
 <li class="folder unselectable collapsed" onclick="toggle_folder(this);">
   <a class="link">
     <img alt="" src="images/tree-view-folder-closed.gif" class="icon icon-d-1" height="16" width="16">
@@ -6093,8 +6102,8 @@
 	    </div>
 	  </div>
 	  <div class="title" id="chrome-stream-title">
-	    <a target="_blank" href="">&nbsp;</a>
-	    <a target="_blank" href="">&nbsp;</a>
+	    <a href="">&nbsp;</a>
+	    <a href="">&nbsp;</a>
 	  </div>
 	</div>
 	<table id="viewer-box-table">
@@ -6103,10 +6112,12 @@
 	      <td class="" id="viewer-box">
 		<div id="viewer-box-inner">
 		  <div id="viewer-top-links" class="show-all">
+		    <!--
 		    <span id="viewer-all-new-links-parent">
 		      <span class="viewer-links" id="viewer-new-links">表示: - <span id="show-all" class="link">すべてのアイテム</span></span>
 		      <span class="viewer-links" id="viewer-all-links">表示: <span id="show-new" class="link"></span> -
 			<strong>すべてのアイテム</strong></span></span>
+		    -->
 		    <table class="button-container unselectable button-container-tight viewer-buttons"
 			   id="viewer-refresh">
 		      <tbody>
@@ -6131,6 +6142,7 @@
 	  </tbody>
 	</table>
 	<div id="entries-toggler"></div>
+	<div id="entries-toggler2"></div>
 	<div id="viewer-page-container1">
 	  <div id="viewer-header1">
 	    <div id="viewer-controls1">
